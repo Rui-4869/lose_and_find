@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 import click
 from flask import Flask, abort, redirect, render_template, request, url_for
@@ -9,6 +10,7 @@ from flask.cli import with_appcontext
 from flask_login import (LoginManager, current_user, login_required,
                          login_user, logout_user)
 from sqlalchemy import func
+from werkzeug.utils import secure_filename
 
 from agent.rule_agent import RuleBasedAgent
 from config import Config
@@ -43,6 +45,7 @@ def _ensure_sqlite_dir(database_uri: str) -> None:
 
 
 _ensure_sqlite_dir(app.config["SQLALCHEMY_DATABASE_URI"])
+Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
 
 db.init_app(app)
 
@@ -74,6 +77,26 @@ def _parse_datetime(value: Optional[str]) -> datetime:
         return datetime.strptime(value, "%Y-%m-%dT%H:%M").replace(tzinfo=UTC)
     except ValueError:
         return datetime.now(UTC)
+
+
+def _allowed_image(filename: str) -> bool:
+    if not filename or "." not in filename:
+        return False
+    ext = filename.rsplit(".", 1)[1].lower()
+    return ext in app.config["ALLOWED_IMAGE_EXTENSIONS"]
+
+
+def _save_uploaded_image(file_storage) -> Optional[str]:
+    if file_storage is None or file_storage.filename == "":
+        return None
+    if not _allowed_image(file_storage.filename):
+        return None
+    secure_name = secure_filename(file_storage.filename)
+    ext = secure_name.rsplit(".", 1)[1].lower()
+    unique_name = f"{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}_{uuid4().hex}.{ext}"
+    upload_path = Path(app.config["UPLOAD_FOLDER"]) / unique_name
+    file_storage.save(upload_path)
+    return f"uploads/{unique_name}"
 
 
 @app.get("/")
@@ -184,10 +207,23 @@ def create_lost_item():
     occurred_at = _parse_datetime(request.form.get("occurred_at"))
     reporter_name = request.form.get("reporter_name", "").strip() or None
     contact_info = request.form.get("contact_info", "").strip() or None
+    image_file = request.files.get("image")
 
     if not category or not description or not location:
         flash("请填写完整的失物信息。", "danger")
         return redirect(url_for("index"))
+
+    image_path: Optional[str] = None
+    if image_file and image_file.filename:
+        if not _allowed_image(image_file.filename):
+            flash("仅支持上传 PNG/JPG/GIF/WebP 等图片格式。", "danger")
+            return redirect(url_for("create_lost_item"))
+        try:
+            image_path = _save_uploaded_image(image_file)
+        except Exception as exc:  # pragma: no cover - unexpected file I/O errors
+            app.logger.exception("保存失物图片失败", exc_info=exc)
+            flash("上传图片时出现问题，请稍后重试。", "danger")
+            return redirect(url_for("create_lost_item"))
 
     if contact_info is None and current_user.is_authenticated:
         contact_info = current_user.username
@@ -199,6 +235,7 @@ def create_lost_item():
         occurred_at=occurred_at,
         reporter_name=reporter_name,
         contact_info=contact_info,
+        image_path=image_path,
         owner=current_user,
     )
     db.session.add(lost_item)
@@ -221,10 +258,23 @@ def create_found_item():
     occurred_at = _parse_datetime(request.form.get("occurred_at"))
     reporter_name = request.form.get("reporter_name", "").strip() or None
     contact_info = request.form.get("contact_info", "").strip() or None
+    image_file = request.files.get("image")
 
     if not category or not description or not location:
         flash("请填写完整的招领信息。", "danger")
         return redirect(url_for("index"))
+
+    image_path: Optional[str] = None
+    if image_file and image_file.filename:
+        if not _allowed_image(image_file.filename):
+            flash("仅支持上传 PNG/JPG/GIF/WebP 等图片格式。", "danger")
+            return redirect(url_for("create_found_item"))
+        try:
+            image_path = _save_uploaded_image(image_file)
+        except Exception as exc:  # pragma: no cover - unexpected file I/O errors
+            app.logger.exception("保存招领图片失败", exc_info=exc)
+            flash("上传图片时出现问题，请稍后重试。", "danger")
+            return redirect(url_for("create_found_item"))
 
     if contact_info is None and current_user.is_authenticated:
         contact_info = current_user.username
@@ -236,6 +286,7 @@ def create_found_item():
         occurred_at=occurred_at,
         reporter_name=reporter_name,
         contact_info=contact_info,
+        image_path=image_path,
         owner=current_user,
     )
     db.session.add(found_item)
