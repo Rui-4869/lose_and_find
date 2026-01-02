@@ -47,31 +47,82 @@ class RuleBasedAgent:
             yield lost_item, found_item, outcome
 
     def _decide(self, lost_item: LostItem, found_item: FoundItem) -> Optional[RuleOutcome]:
+        """
+        Enhanced decision strategy with weighted scoring:
+        - Category match: 最关键因素 (weight: 40)
+        - Location match: 重要因素 (weight: 30)
+        - Time proximity: 时间相关性 (weight: 15)
+        - Description similarity: 描述相似性 (weight: 15)
+        """
         category_match = self._normalize(lost_item.category) == self._normalize(found_item.category)
         location_match = self._normalize(lost_item.location) == self._normalize(found_item.location)
         time_gap_days = self._time_difference_days(lost_item.occurred_at, found_item.occurred_at)
         description_similarity = self._description_similarity(lost_item.description, found_item.description)
         keyword_overlap = self._keyword_overlap(lost_item.description, found_item.description)
-
-        if category_match and location_match and time_gap_days is not None and time_gap_days <= 3:
+        
+        # Rule 1: Perfect match - 类别 + 地点 + 时间接近
+        if category_match and location_match and time_gap_days is not None and time_gap_days <= 2:
             return RuleOutcome(
-                score=95,
+                score=98,
                 level=MatchLevel.HIGH,
-                reason="类别、地点、时间高度匹配",
+                reason="类别完全匹配，地点相同，时间差不超过2天",
             )
-
-        if category_match and (description_similarity >= 0.6 or keyword_overlap >= 2):
+        
+        # Rule 2: Strong match - 类别 + 地点 + 描述相似
+        if category_match and location_match and description_similarity >= 0.5:
+            return RuleOutcome(
+                score=90,
+                level=MatchLevel.HIGH,
+                reason="类别与地点完全匹配，描述相似度高",
+            )
+        
+        # Rule 3: Category + description relevance
+        if category_match and (description_similarity >= 0.65 or keyword_overlap >= 3):
+            return RuleOutcome(
+                score=80,
+                level=MatchLevel.MEDIUM,
+                reason="类别一致，描述相似或关键词重合度高",
+            )
+        
+        # Rule 4: Category + location match
+        if category_match and location_match and time_gap_days is not None and time_gap_days <= 7:
             return RuleOutcome(
                 score=75,
                 level=MatchLevel.MEDIUM,
-                reason="类别一致，描述相似",
+                reason="类别与地点匹配，时间差在7天内",
             )
-
-        if description_similarity >= 0.45 or location_match:
+        
+        # Rule 5: Category match with moderate time gap
+        if category_match and time_gap_days is not None and time_gap_days <= 5 and keyword_overlap >= 1:
+            return RuleOutcome(
+                score=70,
+                level=MatchLevel.MEDIUM,
+                reason="类别相符，时间差合理，描述有关键词重合",
+            )
+        
+        # Rule 6: Strong description match and location match
+        if description_similarity >= 0.6 and location_match:
+            return RuleOutcome(
+                score=65,
+                level=MatchLevel.MEDIUM,
+                reason="描述相似度高，地点相同",
+            )
+        
+        # Rule 7: Moderate matches - weak relevance
+        if (category_match and description_similarity >= 0.4) or \
+           (description_similarity >= 0.5 and keyword_overlap >= 2):
             return RuleOutcome(
                 score=55,
                 level=MatchLevel.LOW,
-                reason="描述或地点存在弱相关",
+                reason="类别或描述存在相关性",
+            )
+        
+        # Rule 8: Location alone is not enough
+        if location_match and keyword_overlap >= 2 and description_similarity >= 0.35:
+            return RuleOutcome(
+                score=45,
+                level=MatchLevel.LOW,
+                reason="地点相同，描述有弱相关",
             )
 
         return None
