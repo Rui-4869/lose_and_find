@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from typing import Iterable, List, Optional
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from models import FoundItem, LostItem, MatchLevel, MatchResult
@@ -11,11 +12,17 @@ class MatchService:
         self._session = session
 
     # Data access helpers
-    def all_found_items(self) -> List[FoundItem]:
-        return FoundItem.query.order_by(FoundItem.occurred_at.desc()).all()
+    def all_found_items(self, user_id: Optional[int] = None, include_all: bool = False) -> List[FoundItem]:
+        query = FoundItem.query.order_by(FoundItem.occurred_at.desc())
+        if user_id is not None and not include_all:
+            query = query.filter_by(user_id=user_id)
+        return query.all()
 
-    def all_lost_items(self) -> List[LostItem]:
-        return LostItem.query.order_by(LostItem.occurred_at.desc()).all()
+    def all_lost_items(self, user_id: Optional[int] = None, include_all: bool = False) -> List[LostItem]:
+        query = LostItem.query.order_by(LostItem.occurred_at.desc())
+        if user_id is not None and not include_all:
+            query = query.filter_by(user_id=user_id)
+        return query.all()
 
     def matches_for_lost(self, lost_id: int) -> List[MatchResult]:
         return (
@@ -34,6 +41,16 @@ class MatchService:
     def recent_matches(self, limit: int = 10) -> List[MatchResult]:
         return (
             MatchResult.query.order_by(MatchResult.is_completed.asc(), MatchResult.score.desc(), MatchResult.updated_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+    def matches_for_user(self, user_id: int, limit: int = 10) -> List[MatchResult]:
+        return (
+            MatchResult.query.join(MatchResult.lost_item)
+            .join(MatchResult.found_item)
+            .filter(or_(LostItem.user_id == user_id, FoundItem.user_id == user_id))
+            .order_by(MatchResult.is_completed.asc(), MatchResult.score.desc(), MatchResult.updated_at.desc())
             .limit(limit)
             .all()
         )
@@ -104,3 +121,11 @@ class MatchService:
             match.completed_at = datetime.now(UTC)
             self._session.commit()
         return match
+
+    def owns_lost_item(self, lost_id: int, user_id: int) -> bool:
+        item = self._session.get(LostItem, lost_id)
+        return bool(item and item.user_id == user_id)
+
+    def owns_found_item(self, found_id: int, user_id: int) -> bool:
+        item = self._session.get(FoundItem, found_id)
+        return bool(item and item.user_id == user_id)
