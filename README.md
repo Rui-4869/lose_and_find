@@ -60,6 +60,25 @@
    - 可在列表内点击“删除”快速移除记录，匹配表格支持“确认完成”以锁定成功结果。
 7. 若此前已生成旧版本数据库，请删除 `data/lost_and_found.db` 以加载新增字段。
 
+### 常见问题：Internal Server Error
+
+若浏览器提示 “Internal Server Error”，可按照以下步骤排查：
+
+1. **查看日志定位异常**
+   - Docker 部署：`docker compose logs -f web`
+   - 本地调试：`flask run --debug` 后刷新页面，在终端查看 traceback。
+2. **数据库缺少新字段**
+   - 日志若显示 `no such column` 等错误，删除旧数据库并重启：
+     ```powershell
+     Remove-Item .\data\lost_and_found.db
+     flask run --debug
+     ```
+     Docker 环境删除本地 `data` 目录，再执行 `docker compose -p lost-and-found up --build`。
+3. **依赖缺失**
+   - 若日志提示模块不存在，重新安装依赖：`pip install -r requirements.txt`
+4. **其他错误**
+   - 将完整日志粘贴给开发者或在 Issue 中反馈，以便进一步定位。
+
 ## Docker 部署
 
 1. 首次部署推荐直接运行：
