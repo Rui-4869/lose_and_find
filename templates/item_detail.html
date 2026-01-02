@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+	<div class="col-lg-8 mx-auto">
+		<div class="card shadow-sm mb-4">
+			<div class="card-header bg-white d-flex justify-content-between align-items-center">
+				<h4 class="mb-0">
+					{% if item_type == "lost" %}
+						失物详情
+					{% else %}
+						招领详情
+					{% endif %}
+				</h4>
+				<a href="{{ url_for('index') }}" class="btn btn-sm btn-secondary">返回列表</a>
+			</div>
+			<div class="card-body">
+				<div class="row mb-4">
+					<div class="col-md-6">
+						<h6 class="text-muted">物品类别</h6>
+						<p class="lead">{{ item.category }}</p>
+					</div>
+					<div class="col-md-6">
+						<h6 class="text-muted">报告人</h6>
+						<p class="lead">{{ item.reporter_name or item.owner.username }}</p>
+					</div>
+				</div>
+
+				<div class="row mb-4">
+					<div class="col-md-6">
+						<h6 class="text-muted">发生地点</h6>
+						<p class="lead">{{ item.location }}</p>
+					</div>
+					<div class="col-md-6">
+						<h6 class="text-muted">发生时间</h6>
+						<p class="lead">{{ item.occurred_at.strftime('%Y-%m-%d %H:%M') }}</p>
+					</div>
+				</div>
+
+				<div class="row mb-4">
+					<div class="col-12">
+						<h6 class="text-muted">物品描述</h6>
+						<div class="alert alert-light border">
+							{{ item.description }}
+						</div>
+					</div>
+				</div>
+
+				<div class="row mb-4">
+					<div class="col-md-6">
+						<h6 class="text-muted">联系方式</h6>
+						<p class="lead">{{ item.contact_info or "未提供" }}</p>
+					</div>
+					<div class="col-md-6">
+						<h6 class="text-muted">提交时间</h6>
+						<p class="lead">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+					</div>
+				</div>
+
+				{% if is_owner %}
+					<div class="row">
+						<div class="col-12">
+							<div class="d-flex gap-2">
+								{% if item_type == "lost" %}
+									<form method="post" action="{{ url_for('trigger_lost_match', lost_id=item.id) }}" style="display: inline;">
+										<button class="btn btn-success" type="submit">
+											<i class="bi bi-arrow-repeat"></i> 启动智能体匹配
+										</button>
+									</form>
+									<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除此失物记录？');" style="display: inline;">
+										<button class="btn btn-danger" type="submit">
+											<i class="bi bi-trash"></i> 删除记录
+										</button>
+									</form>
+								{% else %}
+									<form method="post" action="{{ url_for('trigger_found_match', found_id=item.id) }}" style="display: inline;">
+										<button class="btn btn-success" type="submit">
+											<i class="bi bi-arrow-repeat"></i> 启动智能体匹配
+										</button>
+									</form>
+									<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除此招领记录？');" style="display: inline;">
+										<button class="btn btn-danger" type="submit">
+											<i class="bi bi-trash"></i> 删除记录
+										</button>
+									</form>
+								{% endif %}
+							</div>
+						</div>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+
+		{% if is_owner %}
+			<div class="card shadow-sm">
+				<div class="card-header bg-white">
+					<h5 class="mb-0">该记录的匹配结果</h5>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-striped mb-0">
+						<thead class="table-light">
+							<tr>
+								<th scope="col">匹配等级</th>
+								<th scope="col">
+									{% if item_type == "lost" %}
+										招领描述
+									{% else %}
+										失物描述
+									{% endif %}
+								</th>
+								<th scope="col">分数</th>
+								<th scope="col">理由</th>
+								<th scope="col">状态</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% if item_matches %}
+								{% for match in item_matches %}
+									<tr>
+										<td>{{ match.level }}</td>
+										<td>
+											{% if item_type == "lost" %}
+												<strong>{{ match.found_item.category }}</strong> · {{ match.found_item.description[:40] }}<br>
+												<small class="text-muted">地点：{{ match.found_item.location }}</small>
+											{% else %}
+												<strong>{{ match.lost_item.category }}</strong> · {{ match.lost_item.description[:40] }}<br>
+												<small class="text-muted">地点：{{ match.lost_item.location }}</small>
+											{% endif %}
+										</td>
+										<td>{{ match.score }}</td>
+										<td>{{ match.reason or "-" }}</td>
+										<td>
+											{% if match.is_completed %}
+												<span class="badge bg-secondary">已完成</span>
+											{% else %}
+												<form method="post" action="{{ url_for('complete_match', match_id=match.id) }}" onsubmit="return confirm('确认该匹配已完成？');" style="display: inline;">
+													<button class="btn btn-sm btn-outline-primary" type="submit">确认完成</button>
+												</form>
+											{% endif %}
+										</td>
+									</tr>
+								{% endfor %}
+							{% else %}
+								<tr>
+									<td colspan="5" class="text-center py-4 text-muted">暂无匹配结果</td>
+								</tr>
+							{% endif %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}
