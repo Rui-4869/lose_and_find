@@ -132,10 +132,14 @@
 										<td>
 											{% if item_type == "lost" %}
 												<strong>{{ match.found_item.category }}</strong> · {{ match.found_item.description[:40] }}<br>
-												<small class="text-muted">地点：{{ match.found_item.location }}</small>
+												<small class="text-muted">地点：{{ match.found_item.location }}</small><br>
+												<small class="text-muted">联系方式：{{ match.found_item.contact_info or "未提供" }}</small><br>
+												<a class="btn btn-sm btn-outline-secondary mt-2" href="{{ url_for('view_found_item', found_id=match.found_item.id) }}">查看招领详情</a>
 											{% else %}
 												<strong>{{ match.lost_item.category }}</strong> · {{ match.lost_item.description[:40] }}<br>
-												<small class="text-muted">地点：{{ match.lost_item.location }}</small>
+												<small class="text-muted">地点：{{ match.lost_item.location }}</small><br>
+												<small class="text-muted">联系方式：{{ match.lost_item.contact_info or "未提供" }}</small><br>
+												<a class="btn btn-sm btn-outline-secondary mt-2" href="{{ url_for('view_lost_item', lost_id=match.lost_item.id) }}">查看失物详情</a>
 											{% endif %}
 										</td>
 										<td>{{ match.score }}</td>
