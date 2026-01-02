@@ -2,12 +2,28 @@
 
 {% block content %}
 {% if current_user.is_authenticated %}
-<div class="alert alert-primary d-flex flex-wrap align-items-center justify-content-between gap-2">
-	<div>选择操作快速跳转：</div>
-	<div class="d-flex flex-wrap gap-2">
-		<a class="btn btn-outline-primary btn-sm" href="#lost-form">提交失物信息</a>
-		<a class="btn btn-outline-success btn-sm" href="#found-form">提交招领信息</a>
-		<a class="btn btn-outline-secondary btn-sm" href="#matches-table">查看推荐</a>
+<div class="row g-4 mb-1">
+	<div class="col-lg-6">
+		<div class="card shadow-sm">
+			<div class="card-body d-flex flex-column gap-3">
+				<div>
+					<h5 class="card-title">发布失物信息</h5>
+					<p class="card-text text-muted">记录遗失物品的类别、地点与描述，系统会自动搜索潜在招领记录。</p>
+				</div>
+				<a class="btn btn-primary align-self-start" href="{{ url_for('create_lost_item') }}">前往填写</a>
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-6">
+		<div class="card shadow-sm">
+			<div class="card-body d-flex flex-column gap-3">
+				<div>
+					<h5 class="card-title">发布招领信息</h5>
+					<p class="card-text text-muted">记录拾到物品的关键信息，帮助失主快速找到对应记录。</p>
+				</div>
+				<a class="btn btn-success align-self-start" href="{{ url_for('create_found_item') }}">前往填写</a>
+			</div>
+		</div>
 	</div>
 </div>
 {% else %}
@@ -15,98 +31,6 @@
 	登录后即可提交失物与招领信息，并使用智能推荐。<a class="alert-link" href="{{ url_for('login') }}">前往登录</a> 或 <a class="alert-link" href="{{ url_for('register') }}">立即注册</a>。
 </div>
 {% endif %}
-<div class="row g-4">
-	<div class="col-lg-6">
-		<div class="card shadow-sm" id="lost-form">
-			<div class="card-header bg-white">
-				<h5 class="mb-0">发布失物信息</h5>
-			</div>
-			<div class="card-body">
-				{% if current_user.is_authenticated %}
-				<form method="post" action="{{ url_for('create_lost_item') }}">
-					<div class="mb-3">
-						<label class="form-label">物品类别</label>
-						<select class="form-select" name="category" required>
-							<option value="">请选择类别</option>
-							{% for category in categories %}
-								<option value="{{ category }}">{{ category }}</option>
-							{% endfor %}
-						</select>
-					</div>
-					<div class="mb-3">
-						<label class="form-label">丢失时间</label>
-						<input class="form-control" type="datetime-local" name="occurred_at">
-					</div>
-					<div class="mb-3">
-						<label class="form-label">丢失地点</label>
-						<input class="form-control" name="location" placeholder="例如：图书馆三楼" required>
-					</div>
-					<div class="mb-3">
-						<label class="form-label">详细描述</label>
-						<textarea class="form-control" name="description" rows="3" placeholder="描述外观、颜色、特征" required></textarea>
-					</div>
-					<div class="mb-3">
-						<label class="form-label">联系人（选填）</label>
-						<input class="form-control" name="reporter_name">
-					</div>
-					<div class="mb-3">
-						<label class="form-label">联系方式（选填）</label>
-						<input class="form-control" name="contact_info" placeholder="电话/邮箱/微信">
-					</div>
-					<button class="btn btn-primary" type="submit">提交失物信息</button>
-				</form>
-				{% else %}
-				<p class="mb-0">请先<a href="{{ url_for('login') }}">登录</a>后发布失物信息。</p>
-				{% endif %}
-			</div>
-		</div>
-	</div>
-	<div class="col-lg-6">
-		<div class="card shadow-sm" id="found-form">
-			<div class="card-header bg-white">
-				<h5 class="mb-0">发布招领信息</h5>
-			</div>
-			<div class="card-body">
-				{% if current_user.is_authenticated %}
-				<form method="post" action="{{ url_for('create_found_item') }}">
-					<div class="mb-3">
-						<label class="form-label">物品类别</label>
-						<select class="form-select" name="category" required>
-							<option value="">请选择类别</option>
-							{% for category in categories %}
-								<option value="{{ category }}">{{ category }}</option>
-							{% endfor %}
-						</select>
-					</div>
-					<div class="mb-3">
-						<label class="form-label">拾到时间</label>
-						<input class="form-control" type="datetime-local" name="occurred_at">
-					</div>
-					<div class="mb-3">
-						<label class="form-label">拾到地点</label>
-						<input class="form-control" name="location" placeholder="例如：食堂一楼" required>
-					</div>
-					<div class="mb-3">
-						<label class="form-label">详细描述</label>
-						<textarea class="form-control" name="description" rows="3" placeholder="描述外观、颜色、特征" required></textarea>
-					</div>
-					<div class="mb-3">
-						<label class="form-label">联系人（选填）</label>
-						<input class="form-control" name="reporter_name">
-					</div>
-					<div class="mb-3">
-						<label class="form-label">联系方式（选填）</label>
-						<input class="form-control" name="contact_info" placeholder="电话/邮箱/微信">
-					</div>
-					<button class="btn btn-success" type="submit">提交招领信息</button>
-				</form>
-				{% else %}
-				<p class="mb-0">请先<a href="{{ url_for('login') }}">登录</a>后发布招领信息。</p>
-				{% endif %}
-			</div>
-		</div>
-	</div>
-</div>
 
 <div class="row g-4 mt-1">
 	<div class="col-lg-6">

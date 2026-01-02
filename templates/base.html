@@ -16,6 +16,12 @@
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-2">
                 {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('create_lost_item') }}">发布失物</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('create_found_item') }}">发布招领</a>
+                    </li>
                     <li class="nav-item text-white-50 small">欢迎，{{ current_user.username }}</li>
                     <li class="nav-item">
                         <form method="post" action="{{ url_for('logout') }}">
