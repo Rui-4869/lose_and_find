@@ -11,3 +11,6 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.getenv("SECRET_KEY", "lost-and-found-secret")
     ITEMS_PER_PAGE = 10
+    UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads")
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB per image
+    ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
