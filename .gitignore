@@ -1,0 +1,30 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment variables and secrets
+.env
+.env.*
+
+# SQLite runtime databases
+*.db
+*.sqlite3
+data/
+
+# Flask instance folder
+instance/
+
+# Logs and reports
+*.log
+htmlcov/
+.coverage*
+
+# Build artifacts
+build/
+dist/

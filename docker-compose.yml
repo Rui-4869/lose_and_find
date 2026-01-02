@@ -1,0 +1,15 @@
+name: lost-and-found
+
+services:
+  web:
+    build:
+      context: .
+    container_name: lost-and-found-web
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=sqlite:////app/data/lost_and_found.db
+      - FLASK_ENV=production
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

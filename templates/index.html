@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4">
+	<div class="col-lg-6">
+		<div class="card shadow-sm">
+			<div class="card-header bg-white">
+				<h5 class="mb-0">发布失物信息</h5>
+			</div>
+			<div class="card-body">
+				<form method="post" action="{{ url_for('create_lost_item') }}">
+					<div class="mb-3">
+						<label class="form-label">物品类别</label>
+						<select class="form-select" name="category" required>
+							<option value="">请选择类别</option>
+							{% for category in categories %}
+								<option value="{{ category }}">{{ category }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">丢失时间</label>
+						<input class="form-control" type="datetime-local" name="occurred_at">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">丢失地点</label>
+						<input class="form-control" name="location" placeholder="例如：图书馆三楼" required>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">详细描述</label>
+						<textarea class="form-control" name="description" rows="3" placeholder="描述外观、颜色、特征" required></textarea>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">联系人（选填）</label>
+						<input class="form-control" name="reporter_name">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">联系方式（选填）</label>
+						<input class="form-control" name="contact_info" placeholder="电话/邮箱/微信">
+					</div>
+					<button class="btn btn-primary" type="submit">提交失物信息</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-6">
+		<div class="card shadow-sm">
+			<div class="card-header bg-white">
+				<h5 class="mb-0">发布招领信息</h5>
+			</div>
+			<div class="card-body">
+				<form method="post" action="{{ url_for('create_found_item') }}">
+					<div class="mb-3">
+						<label class="form-label">物品类别</label>
+						<select class="form-select" name="category" required>
+							<option value="">请选择类别</option>
+							{% for category in categories %}
+								<option value="{{ category }}">{{ category }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">拾到时间</label>
+						<input class="form-control" type="datetime-local" name="occurred_at">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">拾到地点</label>
+						<input class="form-control" name="location" placeholder="例如：食堂一楼" required>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">详细描述</label>
+						<textarea class="form-control" name="description" rows="3" placeholder="描述外观、颜色、特征" required></textarea>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">联系人（选填）</label>
+						<input class="form-control" name="reporter_name">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">联系方式（选填）</label>
+						<input class="form-control" name="contact_info" placeholder="电话/邮箱/微信">
+					</div>
+					<button class="btn btn-success" type="submit">提交招领信息</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row g-4 mt-1">
+	<div class="col-lg-6">
+		<div class="card shadow-sm h-100">
+			<div class="card-header bg-white d-flex justify-content-between align-items-center">
+				<h5 class="mb-0">最新失物记录</h5>
+				<span class="text-muted small">共 {{ lost_items|length }} 条</span>
+			</div>
+			<div class="list-group list-group-flush">
+				{% if lost_items %}
+					{% for item in lost_items %}
+						<div class="list-group-item {% if highlight_lost_id == item.id %}active{% endif %}">
+							<div class="d-flex justify-content-between align-items-start">
+								<div class="me-3 flex-grow-1">
+									<a class="stretched-link {% if highlight_lost_id == item.id %}text-white{% else %}text-body{% endif %}"
+									   href="{{ url_for('index', lost_id=item.id) }}">
+										<div class="d-flex w-100 justify-content-between">
+											<h6 class="mb-1">{{ item.category }} · {{ item.description[:24] }}{% if item.description|length > 24 %}...{% endif %}</h6>
+											<small>{{ item.occurred_at.strftime('%Y-%m-%d %H:%M') }}</small>
+										</div>
+										<p class="mb-1">地点：{{ item.location }}</p>
+										{% if item.contact_info %}
+											<small>联系方式：{{ item.contact_info }}</small>
+										{% endif %}
+									</a>
+								</div>
+								<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除该失物信息？');">
+									<button class="btn btn-sm {% if highlight_lost_id == item.id %}btn-outline-light{% else %}btn-outline-danger{% endif %}" type="submit">删除</button>
+								</form>
+							</div>
+						</div>
+					{% endfor %}
+				{% else %}
+					<div class="list-group-item">暂时没有失物记录。</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-6">
+		<div class="card shadow-sm h-100">
+			<div class="card-header bg-white d-flex justify-content-between align-items-center">
+				<h5 class="mb-0">最新招领记录</h5>
+				<span class="text-muted small">共 {{ found_items|length }} 条</span>
+			</div>
+			<div class="list-group list-group-flush">
+				{% if found_items %}
+					{% for item in found_items %}
+						<div class="list-group-item {% if highlight_found_id == item.id %}active{% endif %}">
+							<div class="d-flex justify-content-between align-items-start">
+								<div class="me-3 flex-grow-1">
+									<a class="stretched-link {% if highlight_found_id == item.id %}text-white{% else %}text-body{% endif %}"
+									   href="{{ url_for('index', found_id=item.id) }}">
+										<div class="d-flex w-100 justify-content-between">
+											<h6 class="mb-1">{{ item.category }} · {{ item.description[:24] }}{% if item.description|length > 24 %}...{% endif %}</h6>
+											<small>{{ item.occurred_at.strftime('%Y-%m-%d %H:%M') }}</small>
+										</div>
+										<p class="mb-1">地点：{{ item.location }}</p>
+										{% if item.contact_info %}
+											<small>联系方式：{{ item.contact_info }}</small>
+										{% endif %}
+									</a>
+								</div>
+								<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除该招领信息？');">
+									<button class="btn btn-sm {% if highlight_found_id == item.id %}btn-outline-light{% else %}btn-outline-danger{% endif %}" type="submit">删除</button>
+								</form>
+							</div>
+						</div>
+					{% endfor %}
+				{% else %}
+					<div class="list-group-item">暂时没有招领记录。</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="card shadow-sm mt-4">
+	<div class="card-header bg-white">
+		<h5 class="mb-0">智能体匹配推荐</h5>
+	</div>
+	<div class="table-responsive">
+		<table class="table table-striped mb-0">
+			<thead class="table-light">
+				<tr>
+					<th scope="col">匹配等级</th>
+					<th scope="col">失物描述</th>
+					<th scope="col">招领描述</th>
+					<th scope="col">匹配分数</th>
+					<th scope="col">匹配理由</th>
+					<th scope="col" class="text-center">状态</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% if matches %}
+					{% for match in matches %}
+						<tr class="{% if highlight_match_id == match.id %}table-success{% endif %}">
+							<td>{{ match.level }}</td>
+							<td>
+								<strong>{{ match.lost_item.category }}</strong> · {{ match.lost_item.description }}<br>
+								<small class="text-muted">地点：{{ match.lost_item.location }}</small>
+							</td>
+							<td>
+								<strong>{{ match.found_item.category }}</strong> · {{ match.found_item.description }}<br>
+								<small class="text-muted">地点：{{ match.found_item.location }}</small>
+							</td>
+							<td>{{ match.score }}</td>
+							<td>{{ match.reason or "-" }}</td>
+							<td class="text-center">
+								{% if match.is_completed %}
+									<span class="badge bg-secondary">已完成</span>
+								{% else %}
+									<form method="post" action="{{ url_for('complete_match', match_id=match.id) }}" onsubmit="return confirm('确认该匹配已完成？');">
+										<button class="btn btn-sm btn-outline-primary" type="submit">确认完成</button>
+									</form>
+								{% endif %}
+							</td>
+						</tr>
+					{% endfor %}
+				{% else %}
+					<tr>
+						<td colspan="6" class="text-center py-4">尚无匹配结果，欢迎提交信息。</td>
+					</tr>
+				{% endif %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% endblock %}
