@@ -2,13 +2,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Optional
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, abort, redirect, render_template, request, url_for
 from flask import flash
+from flask_login import (LoginManager, current_user, login_required,
+                         login_user, logout_user)
 
 from agent.rule_agent import RuleBasedAgent
 from config import Config
 from database import db
-from models import FoundItem, LostItem
+from models import FoundItem, LostItem, MatchResult, User
 from services import MatchService
 
 
@@ -41,11 +43,24 @@ _ensure_sqlite_dir(app.config["SQLALCHEMY_DATABASE_URI"])
 
 db.init_app(app)
 
+login_manager = LoginManager()
+login_manager.login_view = "login"
+login_manager.login_message = "请先登录以继续。"
+login_manager.login_message_category = "warning"
+login_manager.init_app(app)
+
 with app.app_context():
     db.create_all()
 
 match_service = MatchService(db.session)
 agent = RuleBasedAgent(match_service)
+
+
+@login_manager.user_loader
+def load_user(user_id: str) -> Optional[User]:
+    if not user_id:
+        return None
+    return db.session.get(User, int(user_id))
 
 
 def _parse_datetime(value: Optional[str]) -> datetime:
@@ -87,6 +102,7 @@ def index():
 
 
 @app.post("/lost")
+@login_required
 def create_lost_item():
     category = request.form.get("category", "").strip()
     description = request.form.get("description", "").strip()
@@ -99,6 +115,9 @@ def create_lost_item():
         flash("请填写完整的失物信息。", "danger")
         return redirect(url_for("index"))
 
+    if contact_info is None and current_user.is_authenticated:
+        contact_info = current_user.username
+
     lost_item = LostItem(
         category=category,
         description=description,
@@ -106,6 +125,7 @@ def create_lost_item():
         occurred_at=occurred_at,
         reporter_name=reporter_name,
         contact_info=contact_info,
+        owner=current_user,
     )
     db.session.add(lost_item)
     db.session.commit()
@@ -116,6 +136,7 @@ def create_lost_item():
 
 
 @app.post("/found")
+@login_required
 def create_found_item():
     category = request.form.get("category", "").strip()
     description = request.form.get("description", "").strip()
@@ -128,6 +149,9 @@ def create_found_item():
         flash("请填写完整的招领信息。", "danger")
         return redirect(url_for("index"))
 
+    if contact_info is None and current_user.is_authenticated:
+        contact_info = current_user.username
+
     found_item = FoundItem(
         category=category,
         description=description,
@@ -135,6 +159,7 @@ def create_found_item():
         occurred_at=occurred_at,
         reporter_name=reporter_name,
         contact_info=contact_info,
+        owner=current_user,
     )
     db.session.add(found_item)
     db.session.commit()
@@ -145,27 +170,108 @@ def create_found_item():
 
 
 @app.post("/lost/<int:lost_id>/delete")
+@login_required
 def delete_lost_item(lost_id: int):
+    item = db.session.get(LostItem, lost_id)
+    if item is None:
+        flash("失物信息不存在。", "warning")
+        return redirect(url_for("index"))
+    if item.user_id != current_user.id:
+        abort(403)
     match_service.delete_lost_item(lost_id)
     flash("失物信息已删除。", "info")
     return redirect(url_for("index"))
 
 
 @app.post("/found/<int:found_id>/delete")
+@login_required
 def delete_found_item(found_id: int):
+    item = db.session.get(FoundItem, found_id)
+    if item is None:
+        flash("招领信息不存在。", "warning")
+        return redirect(url_for("index"))
+    if item.user_id != current_user.id:
+        abort(403)
     match_service.delete_found_item(found_id)
     flash("招领信息已删除。", "info")
     return redirect(url_for("index"))
 
 
 @app.post("/matches/<int:match_id>/complete")
+@login_required
 def complete_match(match_id: int):
-    match = match_service.mark_match_completed(match_id)
+    match = db.session.get(MatchResult, match_id)
     if match is None:
         flash("未找到匹配记录。", "warning")
         return redirect(url_for("index"))
+    allowed_user_ids = {match.lost_item.user_id, match.found_item.user_id}
+    if current_user.id not in allowed_user_ids:
+        abort(403)
+    match_service.mark_match_completed(match_id)
     flash("匹配已确认完成。", "success")
     return redirect(url_for("index", match_id=match.id))
+
+
+@app.route("/auth/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
+
+        if not username or not password:
+            flash("用户名和密码均为必填项。", "danger")
+            return render_template("auth_register.html", username=username)
+        if password != confirm:
+            flash("两次输入的密码不一致。", "danger")
+            return render_template("auth_register.html", username=username)
+        if db.session.scalar(db.select(User).filter_by(username=username)):
+            flash("该用户名已被注册。", "danger")
+            return render_template("auth_register.html")
+
+        user = User(username=username)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+
+        login_user(user)
+        flash("注册成功，已自动登录。", "success")
+        return redirect(url_for("index"))
+
+    return render_template("auth_register.html")
+
+
+@app.route("/auth/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        user: Optional[User] = db.session.scalar(db.select(User).filter_by(username=username))
+        if user is None or not user.check_password(password):
+            flash("用户名或密码错误。", "danger")
+            return render_template("auth_login.html", username=username)
+
+        login_user(user)
+        flash("登录成功。", "success")
+        next_url = request.args.get("next")
+        return redirect(next_url or url_for("index"))
+
+    return render_template("auth_login.html")
+
+
+@app.post("/auth/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("您已退出登录。", "info")
+    return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
