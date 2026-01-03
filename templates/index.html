@@ -57,7 +57,7 @@
 										</div>
 									</a>
 								</div>
-								<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline;">
+								<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline; position:relative; z-index:10;">
 									<button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
 								</form>
 							</div>
@@ -99,7 +99,7 @@
 										</div>
 									</a>
 								</div>
-								<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline;">
+								<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline; position:relative; z-index:10;">
 									<button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
 								</form>
 							</div>

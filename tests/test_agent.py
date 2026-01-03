@@ -358,6 +358,102 @@ def test_match_completion_requires_owner_permission():
         assert match.is_completed is True
 
 
+def test_match_chat_participant_can_send_and_fetch():
+    client = create_client_with_fresh_db()
+
+    # register user A and create lost
+    client.post(
+        "/auth/register",
+        data={"username": "alice", "password": "password123", "confirm": "password123"},
+        follow_redirects=True,
+    )
+    client.post(
+        "/lost",
+        data={"category": "证件", "description": "钱包", "location": "图书馆", "occurred_at": "2024-01-01T10:00"},
+        follow_redirects=True,
+    )
+    client.post("/auth/logout", follow_redirects=True)
+
+    # register user B and create found
+    client.post(
+        "/auth/register",
+        data={"username": "bob", "password": "password123", "confirm": "password123"},
+        follow_redirects=True,
+    )
+    client.post(
+        "/found",
+        data={"category": "证件", "description": "钱包发现", "location": "图书馆", "occurred_at": "2024-01-01T11:00"},
+        follow_redirects=True,
+    )
+
+    with main_app_module.app.app_context():
+        match = db.session.scalar(db.select(MatchResult))
+        assert match is not None
+        match_id = match.id
+
+    # login as alice (lost owner)
+    client.post("/auth/logout", follow_redirects=True)
+    client.post("/auth/login", data={"username": "alice", "password": "password123"}, follow_redirects=True)
+
+    # send a message
+    resp = client.post(f"/matches/{match_id}/messages", data={"content": "你好，我丢了钱包"})
+    assert resp.status_code == 200
+    json = resp.get_json()
+    assert json and json.get("message") and json["message"]["content"] == "你好，我丢了钱包"
+
+    # fetch messages
+    resp = client.get(f"/matches/{match_id}/messages")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data and len(data.get("messages", [])) >= 1
+    assert data["messages"][-1]["content"] == "你好，我丢了钱包"
+
+
+def test_match_chat_forbidden_for_non_participant():
+    client = create_client_with_fresh_db()
+
+    # create match between userA and userB
+    client.post(
+        "/auth/register",
+        data={"username": "userA", "password": "password123", "confirm": "password123"},
+        follow_redirects=True,
+    )
+    client.post(
+        "/lost",
+        data={"category": "证件", "description": "A 的物品", "location": "教学楼", "occurred_at": "2024-01-01T10:00"},
+        follow_redirects=True,
+    )
+    client.post("/auth/logout", follow_redirects=True)
+
+    client.post(
+        "/auth/register",
+        data={"username": "userB", "password": "password123", "confirm": "password123"},
+        follow_redirects=True,
+    )
+    client.post(
+        "/found",
+        data={"category": "证件", "description": "B 的发现", "location": "教学楼", "occurred_at": "2024-01-01T11:00"},
+        follow_redirects=True,
+    )
+
+    with main_app_module.app.app_context():
+        match = db.session.scalar(db.select(MatchResult))
+        assert match is not None
+        match_id = match.id
+
+    # logout and register outsider
+    client.post("/auth/logout", follow_redirects=True)
+    client.post(
+        "/auth/register",
+        data={"username": "outsider", "password": "password123", "confirm": "password123"},
+        follow_redirects=True,
+    )
+
+    # outsider tries to post
+    resp = client.post(f"/matches/{match_id}/messages", data={"content": "打扰一下"})
+    assert resp.status_code == 403
+
+
 def test_edit_lost_item_owner_can_edit():
     client = create_client_with_fresh_db()
 

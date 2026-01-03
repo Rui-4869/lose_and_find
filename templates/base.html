@@ -94,7 +94,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('create_found_item') }}">发布招领</a>
                     </li>
-                    <li class="nav-item text-white-50 small">欢迎，{{ current_user.username }}</li>
+                    <li class="nav-item text-black-50 small">欢迎，{{ current_user.username }}</li>
                     <li class="nav-item">
                         <form method="post" action="{{ url_for('logout') }}">
                             <button class="btn btn-outline-secondary btn-sm" type="submit">退出登录</button>

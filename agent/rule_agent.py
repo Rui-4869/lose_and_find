@@ -160,5 +160,21 @@ class RuleBasedAgent:
 
     @staticmethod
     def _keyword_overlap(first: str, second: str) -> int:
-        tokenize = lambda text: {token for token in text.lower().replace("/", " ").split() if token}
+        import re
+        def tokenize(text: str):
+            if not text:
+                return set()
+            text = text.lower()
+            # capture CJK character runs and alphanumeric tokens for broader language support
+            tokens = set(re.findall(r'[\u4e00-\u9fff]+|[a-z0-9]+', text))
+            # augment CJK runs with substrings (length 2..6) to catch multi-character keywords
+            cjk_runs = re.findall(r'[\u4e00-\u9fff]+', text)
+            for run in cjk_runs:
+                length = len(run)
+                maxlen = min(6, length)
+                for i in range(length):
+                    for l in range(2, maxlen + 1):
+                        if i + l <= length:
+                            tokens.add(run[i : i + l])
+            return tokens
         return len(tokenize(first) & tokenize(second))

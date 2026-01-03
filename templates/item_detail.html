@@ -2,171 +2,293 @@
 
 {% block content %}
 <div class="row">
-	<div class="col-lg-8 mx-auto">
-		<div class="card shadow-sm mb-4">
-			<div class="card-header bg-white d-flex justify-content-between align-items-center">
-				<h4 class="mb-0">
-					{% if item_type == "lost" %}
-						失物详情
-					{% else %}
-						招领详情
-					{% endif %}
-				</h4>
-				<a href="{{ url_for('index') }}" class="btn btn-sm btn-secondary rounded-pill">返回列表</a>
-			</div>
-			<div class="card-body">
-				<div class="row mb-4">
-					<div class="col-md-6">
-						<h6 class="text-muted">物品类别</h6>
-						<p class="lead">{{ item.category }}</p>
-					</div>
-					<div class="col-md-6">
-						<h6 class="text-muted">报告人</h6>
-						<p class="lead">{{ item.reporter_name or item.owner.username }}</p>
-					</div>
-				</div>
+  <div class="col-lg-8 mx-auto">
 
-				{% if item.image_path %}
-				<div class="row mb-4">
-					<div class="col-12">
-						<h6 class="text-muted">物品照片</h6>
-						<a href="{{ url_for('static', filename=item.image_path) }}" target="_blank" rel="noopener" class="d-inline-block">
-							<img src="{{ url_for('static', filename=item.image_path) }}" alt="物品照片" class="img-fluid rounded shadow-sm">
-						</a>
-					</div>
-				</div>
-				{% endif %}
+    <!-- ================= 物品详情 ================= -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          {% if item_type == "lost" %}失物详情{% else %}招领详情{% endif %}
+        </h4>
+        <a href="{{ url_for('index') }}" class="btn btn-sm btn-secondary rounded-pill">返回列表</a>
+      </div>
 
-				<div class="row mb-4">
-					<div class="col-md-6">
-						<h6 class="text-muted">发生地点</h6>
-						<p class="lead">{{ item.location }}</p>
-					</div>
-					<div class="col-md-6">
-						<h6 class="text-muted">发生时间</h6>
-						<p class="lead">{{ item.occurred_at.strftime('%Y-%m-%d %H:%M') }}</p>
-					</div>
-				</div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6 class="text-muted">物品类别</h6>
+            <p class="lead">{{ item.category }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted">报告人</h6>
+            <p class="lead">{{ item.reporter_name or item.owner.username }}</p>
+          </div>
+        </div>
 
-				<div class="row mb-4">
-					<div class="col-12">
-						<h6 class="text-muted">物品描述</h6>
-						<div class="alert alert-light border">
-							{{ item.description }}
-						</div>
-					</div>
-				</div>
+        {% if item.image_path %}
+        <div class="mb-4">
+          <h6 class="text-muted">物品照片</h6>
+          <a href="{{ url_for('static', filename=item.image_path) }}" target="_blank">
+            <img src="{{ url_for('static', filename=item.image_path) }}"
+                 class="img-fluid rounded shadow-sm">
+          </a>
+        </div>
+        {% endif %}
 
-				<div class="row mb-4">
-					<div class="col-md-6">
-						<h6 class="text-muted">联系方式</h6>
-						<p class="lead">{{ item.contact_info or "未提供" }}</p>
-					</div>
-					<div class="col-md-6">
-						<h6 class="text-muted">提交时间</h6>
-						<p class="lead">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-					</div>
-				</div>
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6 class="text-muted">发生地点</h6>
+            <p>{{ item.location }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted">发生时间</h6>
+            <p>{{ item.occurred_at.strftime('%Y-%m-%d %H:%M') }}</p>
+          </div>
+        </div>
 
-				{% if is_owner %}
-					<div class="row">
-						<div class="col-12">
-							<div class="d-flex gap-2">
-								{% if item_type == "lost" %}
-									<a class="btn btn-outline-secondary rounded-pill" href="{{ url_for('edit_lost_item', lost_id=item.id) }}">编辑</a>
-						<form method="post" action="{{ url_for('trigger_lost_match', lost_id=item.id) }}" style="display: inline;">
-								<button class="btn btn-success rounded-pill" type="submit">
-											<i class="bi bi-arrow-repeat"></i> 启动智能体匹配
-										</button>
-									</form>
-									<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除此失物记录？');" style="display: inline;">
-								<button class="btn btn-danger rounded-pill" type="submit">
-											<i class="bi bi-trash"></i> 删除记录
-										</button>
-									</form>
-								{% else %}
-									<a class="btn btn-outline-secondary rounded-pill" href="{{ url_for('edit_found_item', found_id=item.id) }}">编辑</a>
-						<form method="post" action="{{ url_for('trigger_found_match', found_id=item.id) }}" style="display: inline;">
-								<button class="btn btn-success rounded-pill" type="submit">
-											<i class="bi bi-arrow-repeat"></i> 启动智能体匹配
-										</button>
-									</form>
-									<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除此招领记录？');" style="display: inline;">
-								<button class="btn btn-danger rounded-pill" type="submit">
-											<i class="bi bi-trash"></i> 删除记录
-										</button>
-									</form>
-								{% endif %}
-							</div>
-						</div>
-					</div>
-				{% endif %}
-			</div>
-		</div>
+        <div class="mb-4">
+          <h6 class="text-muted">物品描述</h6>
+          <div class="alert alert-light border">{{ item.description }}</div>
+        </div>
 
-		{% if is_owner %}
-			<div class="card shadow-sm">
-				<div class="card-header bg-white">
-					<h5 class="mb-0">该记录的匹配结果</h5>
-				</div>
-				<div class="table-responsive">
-					<table class="table table-striped mb-0">
-						<thead class="table-light">
-							<tr>
-								<th scope="col">匹配等级</th>
-								<th scope="col">
-									{% if item_type == "lost" %}
-										招领描述
-									{% else %}
-										失物描述
-									{% endif %}
-								</th>
-								<th scope="col">分数</th>
-								<th scope="col">理由</th>
-								<th scope="col">状态</th>
-							</tr>
-						</thead>
-						<tbody>
-							{% if item_matches %}
-								{% for match in item_matches %}
-									<tr>
-										<td>{{ match.level }}</td>
-										<td>
-											{% if item_type == "lost" %}
-												<strong>{{ match.found_item.category }}</strong> · {{ match.found_item.description[:40] }}<br>
-												<small class="text-muted">地点：{{ match.found_item.location }}</small><br>
-												<small class="text-muted">联系方式：{{ match.found_item.contact_info or "未提供" }}</small><br>
-												<a class="btn btn-sm btn-outline-secondary rounded-pill mt-2" href="{{ url_for('view_found_item', found_id=match.found_item.id) }}">查看招领详情</a>
-											{% else %}
-												<strong>{{ match.lost_item.category }}</strong> · {{ match.lost_item.description[:40] }}<br>
-												<small class="text-muted">地点：{{ match.lost_item.location }}</small><br>
-												<small class="text-muted">联系方式：{{ match.lost_item.contact_info or "未提供" }}</small><br>
-												<a class="btn btn-sm btn-outline-secondary rounded-pill mt-2" href="{{ url_for('view_lost_item', lost_id=match.lost_item.id) }}">查看失物详情</a>
-											{% endif %}
-										</td>
-										<td>{{ match.score }}</td>
-										<td>{{ match.reason or "-" }}</td>
-										<td>
-											{% if match.is_completed %}
-												<span class="badge bg-secondary">已完成</span>
-											{% else %}
-												<form method="post" action="{{ url_for('complete_match', match_id=match.id) }}" onsubmit="return confirm('确认该匹配已完成？');" style="display: inline;">
-													<button class="btn btn-sm btn-outline-primary rounded-pill" type="submit">确认完成</button>
-												</form>
-											{% endif %}
-										</td>
-									</tr>
-								{% endfor %}
-							{% else %}
-								<tr>
-									<td colspan="5" class="text-center py-4 text-muted">暂无匹配结果</td>
-								</tr>
-							{% endif %}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		{% endif %}
-	</div>
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-muted">联系方式</h6>
+            <p>{{ item.contact_info or "未提供" }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted">提交时间</h6>
+            <p>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 匹配结果（优化 + 未读提示） ================= -->
+    {% if is_owner %}
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">智能匹配结果</h5>
+      </div>
+
+      <div class="card-body">
+        {% if item_matches %}
+        <div class="d-flex flex-column gap-3">
+          {% for match in item_matches %}
+          <div class="border rounded p-3 {% if match.is_completed %}bg-light{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <span class="badge bg-info">{{ match.level }}</span>
+                <span class="ms-2 text-muted">分数：</span>
+                <span class="fw-bold">{{ match.score }}</span>
+              </div>
+              {% if match.is_completed %}
+                <span class="badge bg-secondary">已完成</span>
+              {% endif %}
+            </div>
+
+            {% if item_type == "lost" %}
+              <strong>{{ match.found_item.category }}</strong>
+              <p class="text-muted mb-1">{{ match.found_item.description[:60] }}</p>
+              <small class="text-muted">📍 {{ match.found_item.location }}</small><br>
+              <small class="text-muted">📞 {{ match.found_item.contact_info or "未提供" }}</small><br>
+              <a href="{{ url_for('view_found_item', found_id=match.found_item.id) }}"
+                 class="btn btn-sm btn-outline-secondary rounded-pill mt-2">
+                查看招领详情
+              </a>
+            {% else %}
+              <strong>{{ match.lost_item.category }}</strong>
+              <p class="text-muted mb-1">{{ match.lost_item.description[:60] }}</p>
+              <small class="text-muted">📍 {{ match.lost_item.location }}</small><br>
+              <small class="text-muted">📞 {{ match.lost_item.contact_info or "未提供" }}</small><br>
+              <a href="{{ url_for('view_lost_item', lost_id=match.lost_item.id) }}"
+                 class="btn btn-sm btn-outline-secondary rounded-pill mt-2">
+                查看失物详情
+              </a>
+            {% endif %}
+
+            {% if match.reason %}
+            <div class="alert alert-light border mt-2 mb-2">
+              <strong>匹配理由：</strong>{{ match.reason }}
+            </div>
+            {% endif %}
+
+            {% if not match.is_completed %}
+            <div class="d-flex justify-content-end gap-2">
+              <form method="post"
+                    action="{{ url_for('complete_match', match_id=match.id) }}"
+                    onsubmit="return confirm('确认该匹配已完成？');">
+                <button class="btn btn-sm btn-outline-primary rounded-pill">
+                  确认完成
+                </button>
+              </form>
+
+              <!-- 🔴 查看聊天（修复 + 未读提示） -->
+              <button type="button"
+                      class="btn btn-sm btn-outline-secondary rounded-pill position-relative"
+                      data-bs-toggle="modal"
+                      data-bs-target="#chatModal"
+                      data-match-id="{{ match.id }}">
+                查看聊天
+                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none"
+                      id="unread-badge-{{ match.id }}">●</span>
+              </button>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+          <p class="text-center text-muted mb-0">暂无匹配结果</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
+
+<!-- ================= 聊天 Modal（原功能保留） ================= -->
+<div class="modal fade" id="chatModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">匹配聊天</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="chatAlert"></div>
+        <div id="chatMessages" class="d-flex flex-column gap-3 p-3"
+             style="max-height:380px; overflow:auto; background:#f8f9fa; border-radius:8px;"></div>
+        <form id="chatForm" class="mt-3 d-flex gap-2">
+          <input id="chatInput" class="form-control" placeholder="发送消息...">
+          <button class="btn btn-primary rounded-pill">发送</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const chatModalEl = document.getElementById('chatModal');
+  let currentMatchId = null;
+  let polling = null;
+
+  // 记录每个 match 最后已读时间
+  const lastReadMap = {};
+
+  const currentUserId = {{ current_user.id if current_user.is_authenticated else 'null' }};
+
+  /* ================= 拉取并显示消息（打开聊天时） ================= */
+  async function fetchMessages(){
+    if(!currentMatchId) return;
+
+    const res = await fetch(`/matches/${currentMatchId}/messages`, {
+      credentials: 'same-origin'
+    });
+    if(!res.ok) return;
+
+    const data = await res.json();
+    const box = document.getElementById('chatMessages');
+    box.innerHTML = '';
+
+    data.messages.forEach(m => {
+      const isMe = m.sender_id === currentUserId;
+      const wrapper = document.createElement('div');
+      wrapper.className = isMe ? 'text-end' : 'text-start';
+
+      wrapper.innerHTML = `
+        <div class="d-inline-block p-2 rounded ${isMe ? 'bg-primary text-white' : 'bg-white'}">
+          <div>${m.content}</div>
+          <small class="text-muted">
+            ${new Date(m.created_at).toLocaleString()}
+          </small>
+        </div>
+      `;
+      box.appendChild(wrapper);
+    });
+
+    box.scrollTop = box.scrollHeight;
+
+    // ⭐ 打开聊天即视为“已读”
+    if(data.messages.length){
+      lastReadMap[currentMatchId] =
+        new Date(data.messages[data.messages.length - 1].created_at).getTime();
+
+      const badge = document.getElementById(`unread-badge-${currentMatchId}`);
+      if(badge) badge.classList.add('d-none');
+    }
+  }
+
+  /* ================= 检查是否有“对方的新消息” ================= */
+  async function checkUnread(matchId){
+    // 正在看的聊天，不显示红点
+    if(currentMatchId === matchId) return;
+
+    const res = await fetch(`/matches/${matchId}/messages`, {
+      credentials: 'same-origin'
+    });
+    if(!res.ok) return;
+
+    const data = await res.json();
+    if(!data.messages.length) return;
+
+    const lastMsg = data.messages[data.messages.length - 1];
+
+    // ❗ 关键修复：只关心“对方发的消息”
+    if(lastMsg.sender_id === currentUserId) return;
+
+    const lastMsgTime = new Date(lastMsg.created_at).getTime();
+    const lastReadTime = lastReadMap[matchId] || 0;
+
+    if(lastMsgTime > lastReadTime){
+      const badge = document.getElementById(`unread-badge-${matchId}`);
+      if(badge) badge.classList.remove('d-none');
+    }
+  }
+
+  /* ================= 打开 / 关闭 Modal ================= */
+  chatModalEl.addEventListener('show.bs.modal', e => {
+    currentMatchId = e.relatedTarget.getAttribute('data-match-id');
+    fetchMessages();
+    polling = setInterval(fetchMessages, 2500);
+  });
+
+  chatModalEl.addEventListener('hide.bs.modal', () => {
+    if(polling) clearInterval(polling);
+    polling = null;
+    currentMatchId = null;
+  });
+
+  /* ================= 发送消息 ================= */
+  document.getElementById('chatForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if(!currentMatchId) return;
+
+    const input = document.getElementById('chatInput');
+    const content = input.value.trim();
+    if(!content) return;
+
+    const form = new FormData();
+    form.append('content', content);
+
+    await fetch(`/matches/${currentMatchId}/messages`, {
+      method: 'POST',
+      body: form,
+      credentials: 'same-origin'
+    });
+
+    input.value = '';
+    fetchMessages();
+  });
+
+  /* ================= 定时轮询所有匹配的未读状态 ================= */
+  document.querySelectorAll('[data-match-id]').forEach(btn => {
+    const matchId = btn.getAttribute('data-match-id');
+    setInterval(() => checkUnread(matchId), 100);
+  });
+
+})();
+</script>
+
 {% endblock %}

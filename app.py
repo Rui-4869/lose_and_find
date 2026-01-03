@@ -246,6 +246,13 @@ def create_lost_item():
     return redirect(url_for("index", lost_id=lost_item.id))
 
 
+# Backwards-compatible POST route used by tests and short-form submissions
+@app.post("/lost")
+@login_required
+def create_lost_item_short():
+    return create_lost_item()
+
+
 @app.route("/lost/<int:lost_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_lost_item(lost_id: int):
@@ -350,6 +357,13 @@ def create_found_item():
     return redirect(url_for("index", found_id=found_item.id))
 
 
+# Backwards-compatible POST route used by tests and short-form submissions
+@app.post("/found")
+@login_required
+def create_found_item_short():
+    return create_found_item()
+
+
 @app.route("/found/<int:found_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_found_item(found_id: int):
@@ -446,6 +460,32 @@ def complete_match(match_id: int):
     match_service.mark_match_completed(match_id)
     flash("匹配已确认完成。", "success")
     return redirect(url_for("index", match_id=match.id))
+
+
+@app.get("/matches/<int:match_id>/messages")
+@login_required
+def get_match_messages(match_id: int):
+    # only participants can view
+    if not match_service.is_match_participant(match_id, current_user.id):
+        abort(403)
+    messages = match_service.messages_for_match(match_id)
+    return {"messages": [m.to_dict() for m in messages]}
+
+
+@app.post("/matches/<int:match_id>/messages")
+@login_required
+def post_match_message(match_id: int):
+    # only participants can send
+    if not match_service.is_match_participant(match_id, current_user.id):
+        abort(403)
+    content = request.form.get("content", "").strip()
+    if not content:
+        flash("消息不能为空。", "danger")
+        return redirect(url_for("index"))
+    message = match_service.add_message(match_id, current_user.id, content)
+    return {
+        "message": message.to_dict(),
+    }
 
 
 @app.route("/auth/register", methods=["GET", "POST"])

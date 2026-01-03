@@ -129,3 +129,20 @@ class MatchService:
     def owns_found_item(self, found_id: int, user_id: int) -> bool:
         item = self._session.get(FoundItem, found_id)
         return bool(item and item.user_id == user_id)
+
+    def is_match_participant(self, match_id: int, user_id: int) -> bool:
+        match = self._session.get(MatchResult, match_id)
+        if match is None:
+            return False
+        return user_id in {match.lost_item.user_id, match.found_item.user_id}
+
+    def messages_for_match(self, match_id: int):
+        from models.message import Message
+        return Message.query.filter_by(match_id=match_id).order_by(Message.created_at.asc()).all()
+
+    def add_message(self, match_id: int, sender_id: int, content: str):
+        from models.message import Message
+        message = Message(match_id=match_id, sender_id=sender_id, content=content)
+        self._session.add(message)
+        self._session.commit()
+        return message

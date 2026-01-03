@@ -37,6 +37,9 @@ class MatchResult(db.Model):
     lost_item = db.relationship("LostItem", back_populates="matches")
     found_item = db.relationship("FoundItem", back_populates="matches")
 
+    # 关联消息（聊天）
+    messages = db.relationship("Message", back_populates="match", cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
