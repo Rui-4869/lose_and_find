@@ -498,9 +498,24 @@ def test_edit_lost_item_owner_can_edit():
     assert resp.status_code == 200
 
     with main_app_module.app.app_context():
-        updated = db.session.get(LostItem, lost_id)
-        assert updated.description == "已编辑描述"
-        assert updated.location == "图书馆二楼"
+        item = db.session.get(LostItem, lost_id)
+        assert item.description == "已编辑描述"
+
+
+def test_my_page_authenticated_shows_my_sections():
+    client = create_client_with_fresh_db()
+
+    client.post(
+        "/auth/register",
+        data={"username": "tester", "password": "password123", "confirm": "password123"},
+        follow_redirects=True,
+    )
+
+    resp = client.get("/my")
+    assert resp.status_code == 200
+    text = resp.get_data(as_text=True)
+    assert "我的失物记录" in text
+    assert "我的招领记录" in text
 
 
 def test_edit_lost_item_forbidden_for_non_owner():

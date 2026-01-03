@@ -2,118 +2,78 @@
 
 {% block content %}
 {% if current_user.is_authenticated %}
-<div class="row g-4 mb-3">
-	<div class="col-lg-6">
-		<div class="card shadow-sm">
-			<div class="card-body d-flex flex-column gap-3">
-				<div>
-					<h5 class="card-title">发布失物信息</h5>
-					<p class="card-text text-muted">记录遗失物品的类别、地点与描述，可随时启动智能体进行匹配。</p>
-				</div>
-				<a class="btn btn-primary rounded-pill align-self-start px-3" href="{{ url_for('create_lost_item') }}"><i class="bi bi-plus-lg me-1"></i> 前往填写</a>
-			</div>
-		</div>
-	</div>
-	<div class="col-lg-6">
-		<div class="card shadow-sm">
-			<div class="card-body d-flex flex-column gap-3">
-				<div>
-					<h5 class="card-title">发布招领信息</h5>
-					<p class="card-text text-muted">记录拾到物品的关键信息，主动触发智能匹配帮助失主。</p>
-				</div>
-				<a class="btn btn-success rounded-pill align-self-start px-3" href="{{ url_for('create_found_item') }}"><i class="bi bi-plus-lg me-1"></i> 前往填写</a>
-			</div>
-		</div>
-	</div>
-</div>
+<section class="hero text-center bg-white mb-4 section-gap">
+    <div class="container py-4">
+        <h1 class="h3 fw-bold">校园失物招领 · 搜索</h1>
+        <p class="text-muted">在校园内搜索失物或招领信息，输入关键词如：钱包 / 图书馆</p>
+        <form class="d-flex justify-content-center mt-3" method="get" action="{{ url_for('index') }}">
+            <div class="input-group w-50 shadow-sm">
+                <input type="search" name="q" value="{{ request.args.get('q','') }}" class="form-control" placeholder="搜索失物或地点，例如：钱包 / 图书馆" aria-label="搜索">
+                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+    </div>
+</section>
 
-<!-- 我的记录模块 -->
-<div class="row g-4 mb-4">
-	<div class="col-lg-6">
-		<div class="card shadow-sm h-100">
-			<div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-				<h5 class="mb-0"><i class="bi bi-person-check"></i> 我的失物记录</h5>
-				<span class="badge bg-light text-primary">{{ my_lost_items|length }}</span>
-			</div>
-			<div class="list-group list-group-flush">
-				{% if my_lost_items %}
-					{% for item in my_lost_items %}
-						<div class="list-group-item">
-							<div class="d-flex justify-content-between align-items-start">
-								<div class="me-3 flex-grow-1">
-									<a class="stretched-link text-body text-decoration-none" href="{{ url_for('view_lost_item', lost_id=item.id) }}">
-										<div class="d-flex align-items-start gap-3">
-											{% if item.image_path %}
-											<img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.category }} 照片" class="rounded shadow-sm" style="width:64px;height:64px;object-fit:cover;">
-											{% endif %}
-											<div class="flex-grow-1">
-												<div class="d-flex w-100 justify-content-between mb-1">
-													<h6 class="mb-0">{{ item.category }}</h6>
-													<small class="text-muted">{{ item.occurred_at.strftime('%Y-%m-%d') }}</small>
-												</div>
-												<p class="mb-1 text-muted small">{{ item.description[:30] }}{% if item.description|length > 30 %}...{% endif %}</p>
-												<p class="mb-0 text-muted small">📍 {{ item.location }}</p>
-											</div>
-										</div>
-									</a>
-								</div>
-								<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline; position:relative; z-index:10;">
-									<button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
-								</form>
-							</div>
-						</div>
-					{% endfor %}
-				{% else %}
-					<div class="list-group-item text-center text-muted py-4">
-						<p class="mb-0">还没有失物记录</p>
-					</div>
-				{% endif %}
-			</div>
-		</div>
-	</div>
-	<div class="col-lg-6">
-		<div class="card shadow-sm h-100">
-			<div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-				<h5 class="mb-0"><i class="bi bi-hand-thumbs-up"></i> 我的招领记录</h5>
-				<span class="badge bg-light text-success">{{ my_found_items|length }}</span>
-			</div>
-			<div class="list-group list-group-flush">
-				{% if my_found_items %}
-					{% for item in my_found_items %}
-						<div class="list-group-item">
-							<div class="d-flex justify-content-between align-items-start">
-								<div class="me-3 flex-grow-1">
-									<a class="stretched-link text-body text-decoration-none" href="{{ url_for('view_found_item', found_id=item.id) }}">
-										<div class="d-flex align-items-start gap-3">
-											{% if item.image_path %}
-											<img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.category }} 照片" class="rounded shadow-sm" style="width:64px;height:64px;object-fit:cover;">
-											{% endif %}
-											<div class="flex-grow-1">
-												<div class="d-flex w-100 justify-content-between mb-1">
-													<h6 class="mb-0">{{ item.category }}</h6>
-													<small class="text-muted">{{ item.occurred_at.strftime('%Y-%m-%d') }}</small>
-												</div>
-												<p class="mb-1 text-muted small">{{ item.description[:30] }}{% if item.description|length > 30 %}...{% endif %}</p>
-												<p class="mb-0 text-muted small">📍 {{ item.location }}</p>
-											</div>
-										</div>
-									</a>
-								</div>
-								<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline; position:relative; z-index:10;">
-									<button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
-								</form>
-							</div>
-						</div>
-					{% endfor %}
-				{% else %}
-					<div class="list-group-item text-center text-muted py-4">
-						<p class="mb-0">还没有招领记录</p>
-					</div>
-				{% endif %}
-			</div>
-		</div>
-	</div>
-</div>
+<section class="container mb-4 section-gap">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">搜索结果 — 失物</h4>
+        <small class="small-muted">共 {{ all_lost_items|length }} 条</small>
+    </div>
+    <div class="row g-3 card-preview">
+        {% if all_lost_items %}
+            {% for item in all_lost_items %}
+                <div class="col-sm-6 col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if item.image_path %}
+                        <img src="{{ url_for('static', filename=item.image_path) }}" class="card-img-top" alt="{{ item.category }}">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title mb-1">{{ item.category }}</h6>
+                            <p class="card-text text-muted small mb-3">{{ item.description[:60] }}{% if item.description|length > 60 %}...{% endif %}</p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <small class="text-muted">📍 {{ item.location }}</small>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('view_lost_item', lost_id=item.id) }}">查看详情</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center text-muted py-4">未找到相关失物</div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="container mb-4 section-gap">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">搜索结果 — 招领</h4>
+        <small class="small-muted">共 {{ all_found_items|length }} 条</small>
+    </div>
+    <div class="row g-3 card-preview">
+        {% if all_found_items %}
+            {% for item in all_found_items %}
+                <div class="col-sm-6 col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if item.image_path %}
+                        <img src="{{ url_for('static', filename=item.image_path) }}" class="card-img-top" alt="{{ item.category }}">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title mb-1">{{ item.category }}</h6>
+                            <p class="card-text text-muted small mb-3">{{ item.description[:60] }}{% if item.description|length > 60 %}...{% endif %}</p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <small class="text-muted">📍 {{ item.location }}</small>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('view_found_item', found_id=item.id) }}">查看详情</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center text-muted py-4">未找到相关招领</div>
+        {% endif %}
+    </div>
+</section>
 {% else %}
 <section class="hero text-center bg-white mb-4 section-gap">
     <div class="container py-5">

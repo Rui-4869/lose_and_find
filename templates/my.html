@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-3">
+	<div class="col-lg-6">
+		<div class="card shadow-sm">
+			<div class="card-body d-flex flex-column gap-3">
+				<div>
+					<h5 class="card-title">发布失物信息</h5>
+					<p class="card-text text-muted">记录遗失物品的类别、地点与描述，可随时启动智能体进行匹配。</p>
+				</div>
+				<a class="btn btn-primary rounded-pill align-self-start px-3" href="{{ url_for('create_lost_item') }}"><i class="bi bi-plus-lg me-1"></i> 前往填写</a>
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-6">
+		<div class="card shadow-sm">
+			<div class="card-body d-flex flex-column gap-3">
+				<div>
+					<h5 class="card-title">发布招领信息</h5>
+					<p class="card-text text-muted">记录拾到物品的关键信息，主动触发智能匹配帮助失主。</p>
+				</div>
+				<a class="btn btn-success rounded-pill align-self-start px-3" href="{{ url_for('create_found_item') }}"><i class="bi bi-plus-lg me-1"></i> 前往填写</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 我的记录模块 -->
+<div class="row g-4 mb-4">
+	<div class="col-lg-6">
+		<div class="card shadow-sm h-100">
+			<div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+				<h5 class="mb-0"><i class="bi bi-person-check"></i> 我的失物记录</h5>
+				<span class="badge bg-light text-primary">{{ my_lost_items|length }}</span>
+			</div>
+			<div class="list-group list-group-flush">
+				{% if my_lost_items %}
+					{% for item in my_lost_items %}
+						<div class="list-group-item">
+							<div class="d-flex justify-content-between align-items-start">
+								<div class="me-3 flex-grow-1">
+									<a class="stretched-link text-body text-decoration-none" href="{{ url_for('view_lost_item', lost_id=item.id) }}">
+										<div class="d-flex align-items-start gap-3">
+											{% if item.image_path %}
+											<img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.category }} 照片" class="rounded shadow-sm" style="width:64px;height:64px;object-fit:cover;">
+											{% endif %}
+											<div class="flex-grow-1">
+												<div class="d-flex w-100 justify-content-between mb-1">
+													<h6 class="mb-0">{{ item.category }}</h6>
+													<small class="text-muted">{{ item.occurred_at.strftime('%Y-%m-%d') }}</small>
+												</div>
+												<p class="mb-1 text-muted small">{{ item.description[:30] }}{% if item.description|length > 30 %}...{% endif %}</p>
+												<p class="mb-0 text-muted small">📍 {{ item.location }}</p>
+											</div>
+										</div>
+									</a>
+								</div>
+								<div class="d-flex gap-2 align-items-center">
+									<a href="{{ url_for('edit_lost_item', lost_id=item.id) }}" class="btn btn-sm btn-outline-primary">编辑</a>
+									<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline; position:relative; z-index:10;">
+										<button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
+									</form>
+								</div>
+							</div>
+						</div>
+					{% endfor %}
+				{% else %}
+					<div class="list-group-item text-center text-muted py-4">
+						<p class="mb-0">还没有失物记录</p>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-6">
+		<div class="card shadow-sm h-100">
+			<div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+				<h5 class="mb-0"><i class="bi bi-hand-thumbs-up"></i> 我的招领记录</h5>
+				<span class="badge bg-light text-success">{{ my_found_items|length }}</span>
+			</div>
+			<div class="list-group list-group-flush">
+				{% if my_found_items %}
+					{% for item in my_found_items %}
+						<div class="list-group-item">
+							<div class="d-flex justify-content-between align-items-start">
+								<div class="me-3 flex-grow-1">
+									<a class="stretched-link text-body text-decoration-none" href="{{ url_for('view_found_item', found_id=item.id) }}">
+										<div class="d-flex align-items-start gap-3">
+											{% if item.image_path %}
+											<img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.category }} 照片" class="rounded shadow-sm" style="width:64px;height:64px;object-fit:cover;">
+											{% endif %}
+											<div class="flex-grow-1">
+												<div class="d-flex w-100 justify-content-between mb-1">
+													<h6 class="mb-0">{{ item.category }}</h6>
+													<small class="text-muted">{{ item.occurred_at.strftime('%Y-%m-%d') }}</small>
+												</div>
+												<p class="mb-1 text-muted small">{{ item.description[:30] }}{% if item.description|length > 30 %}...{% endif %}</p>
+												<p class="mb-0 text-muted small">📍 {{ item.location }}</p>
+											</div>
+										</div>
+									</a>
+								</div>
+								<div class="d-flex gap-2 align-items-center">
+									<a href="{{ url_for('edit_found_item', found_id=item.id) }}" class="btn btn-sm btn-outline-primary">编辑</a>
+									<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除？');" style="display: inline; position:relative; z-index:10;">
+										<button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
+									</form>
+								</div>
+							</div>
+						</div>
+					{% endfor %}
+				{% else %}
+					<div class="list-group-item text-center text-muted py-4">
+						<p class="mb-0">还没有招领记录</p>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 智能体匹配推荐模块 -->
+{% if current_user.is_authenticated %}
+<div class="card shadow-sm mt-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="bi bi-robot"></i> 我的智能体匹配推荐</h5>
+  </div>
+  <div class="card-body">
+    {% if matches %}
+    <div class="d-flex flex-column gap-3">
+      {% for match in matches %}
+      <div class="border rounded p-3 {% if match.is_completed %}bg-light{% endif %}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <span class="badge bg-info">{{ match.level }}</span>
+            <span class="ms-2 text-muted">分数：</span>
+            <span class="fw-bold">{{ match.score }}</span>
+          </div>
+          {% if match.is_completed %}
+            <span class="badge bg-secondary">已完成</span>
+          {% endif %}
+        </div>
+
+        <div class="mb-2">
+          {% if match.lost_item and match.found_item %}
+            <strong>{{ match.lost_item.category }} ⇄ {{ match.found_item.category }}</strong>
+            <p class="text-muted mb-1">{{ match.found_item.description[:60] }}</p>
+            <small class="text-muted">📍 {{ match.found_item.location }}</small>
+            <small class="text-muted ms-2">📞 {{ match.found_item.contact_info or '未提供' }}</small>
+          {% endif %}
+        </div>
+
+        {% if match.reason %}
+        <div class="alert alert-light border mt-2 mb-2">
+          <strong>匹配理由：</strong>{{ match.reason }}
+        </div>
+        {% endif %}
+
+        {% if not match.is_completed %}
+        <div class="d-flex justify-content-end gap-2">
+          <form method="post" action="{{ url_for('complete_match', match_id=match.id) }}" onsubmit="return confirm('确认该匹配已完成？');">
+            <button class="btn btn-sm btn-outline-primary rounded-pill">确认完成</button>
+          </form>
+
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill position-relative" data-bs-toggle="modal" data-bs-target="#chatModal" data-match-id="{{ match.id }}">
+            查看聊天
+            <span class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none" id="unread-badge-{{ match.id }}">●</span>
+          </button>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="text-center text-muted mb-0">暂无匹配结果</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Chat modal copied from item_detail to support chat from My page -->
+<div class="modal fade" id="chatModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">匹配聊天</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="chatAlert"></div>
+        <div id="chatMessages" class="d-flex flex-column gap-3 p-3" style="max-height:380px; overflow:auto; background:#f8f9fa; border-radius:8px;"></div>
+        <form id="chatForm" class="mt-3 d-flex gap-2">
+          <input id="chatInput" class="form-control" placeholder="发送消息...">
+          <button class="btn btn-primary rounded-pill">发送</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const chatModalEl = document.getElementById('chatModal');
+  let currentMatchId = null;
+  let polling = null;
+  const lastReadMap = {};
+  const currentUserId = {{ current_user.id if current_user.is_authenticated else 'null' }};
+
+  async function fetchMessages(){
+    if(!currentMatchId) return;
+    const res = await fetch(`/matches/${currentMatchId}/messages`);
+    const data = await res.json();
+    const box = document.getElementById('chatMessages');
+    box.innerHTML = '';
+    data.messages.forEach(m => {
+      const me = m.sender_id === currentUserId;
+      const div = document.createElement('div');
+      div.className = me ? 'text-end' : 'text-start';
+      div.innerHTML = `<div class="d-inline-block p-2 rounded ${me?'bg-primary text-white':'bg-white'}">
+        <div>${m.content}</div>
+        <small class="text-muted">${new Date(m.created_at).toLocaleString()}</small>
+      </div>`;
+      box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;
+    if(data.messages.length){
+      lastReadMap[currentMatchId] = new Date(data.messages[data.messages.length-1].created_at).getTime();
+      const badge = document.getElementById(`unread-badge-${currentMatchId}`);
+      if(badge) badge.classList.add('d-none');
+    }
+  }
+
+  async function checkUnread(matchId){
+    // 如果当前已经打开该聊天窗口，则不显示未读
+    if(currentMatchId === matchId) return;
+
+    const res = await fetch(`/matches/${matchId}/messages`, { credentials: 'same-origin' });
+    if(!res.ok) return;
+
+    const data = await res.json();
+    if(!data.messages.length) return;
+
+    const lastMsg = data.messages[data.messages.length - 1];
+
+    // 只在最后一条消息是“对方发的”时才考虑未读
+    if(lastMsg.sender_id === currentUserId) {
+      const b = document.getElementById(`unread-badge-${matchId}`);
+      if(b) b.classList.add('d-none');
+      return;
+    }
+
+    const lastMsgTime = new Date(lastMsg.created_at).getTime();
+    const lastReadTime = lastReadMap[matchId] || 0;
+    const badge = document.getElementById(`unread-badge-${matchId}`);
+
+    if(lastMsgTime > lastReadTime){
+      if(badge) badge.classList.remove('d-none');
+    } else {
+      if(badge) badge.classList.add('d-none');
+    }
+  }
+
+  chatModalEl.addEventListener('show.bs.modal', e => {
+    currentMatchId = e.relatedTarget.getAttribute('data-match-id');
+    fetchMessages();
+    polling = setInterval(fetchMessages, 2500);
+  });
+
+  chatModalEl.addEventListener('hide.bs.modal', () => {
+    clearInterval(polling);
+    polling = null;
+    currentMatchId = null;
+  });
+
+  document.getElementById('chatForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const v = chatInput.value.trim();
+    if(!v) return;
+    const f = new FormData();
+    f.append('content', v);
+    await fetch(`/matches/${currentMatchId}/messages`, {method:'POST', body:f});
+    chatInput.value = '';
+    fetchMessages();
+  });
+
+  document.querySelectorAll('[data-match-id]').forEach(btn=>{
+    const id = btn.getAttribute('data-match-id');
+    setInterval(()=>checkUnread(id), 100);
+  });
+})();
+</script>
+{% else %}
+  <p class="text-center text-muted mb-0">暂无匹配结果</p>
+{% endif %}
+
+{% endblock %}

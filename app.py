@@ -154,6 +154,16 @@ def index():
     )
 
 
+@app.get('/my', endpoint='my')
+@login_required
+def my_page():
+    # user's personal page (原先登录时的主页内容)
+    my_lost_items = match_service.all_lost_items(current_user.id, include_all=False)
+    my_found_items = match_service.all_found_items(current_user.id, include_all=False)
+    matches = match_service.matches_for_user(current_user.id)
+    return render_template('my.html', categories=ITEM_CATEGORIES, my_lost_items=my_lost_items, my_found_items=my_found_items, matches=matches)
+
+
 @app.get("/lost/<int:lost_id>")
 def view_lost_item(lost_id: int):
     item = db.session.get(LostItem, lost_id)
