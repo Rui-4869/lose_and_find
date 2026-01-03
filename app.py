@@ -104,13 +104,38 @@ def index():
     # Get all items for display (everyone sees the full list)
     all_lost_items = match_service.all_lost_items()
     all_found_items = match_service.all_found_items()
+    # support simple search via ?q=keyword (search category, description, location)
+    q = (request.args.get('q') or '').strip()
+    if q:
+        pattern = f"%{q}%"
+        all_lost_items = LostItem.query.filter(
+            (LostItem.category.ilike(pattern))
+            | (LostItem.description.ilike(pattern))
+            | (LostItem.location.ilike(pattern))
+        ).order_by(LostItem.occurred_at.desc()).all()
+        all_found_items = FoundItem.query.filter(
+            (FoundItem.category.ilike(pattern))
+            | (FoundItem.description.ilike(pattern))
+            | (FoundItem.location.ilike(pattern))
+        ).order_by(FoundItem.occurred_at.desc()).all()
     
     # Get user's own items if authenticated
     my_lost_items = []
     my_found_items = []
     if current_user.is_authenticated:
-        my_lost_items = match_service.all_lost_items(current_user.id, include_all=False)
-        my_found_items = match_service.all_found_items(current_user.id, include_all=False)
+        # apply same search when user is logged in
+        if q:
+            my_lost_items = LostItem.query.filter(
+                LostItem.user_id == current_user.id,
+                ((LostItem.category.ilike(pattern)) | (LostItem.description.ilike(pattern)) | (LostItem.location.ilike(pattern)))
+            ).order_by(LostItem.occurred_at.desc()).all()
+            my_found_items = FoundItem.query.filter(
+                FoundItem.user_id == current_user.id,
+                ((FoundItem.category.ilike(pattern)) | (FoundItem.description.ilike(pattern)) | (FoundItem.location.ilike(pattern)))
+            ).order_by(FoundItem.occurred_at.desc()).all()
+        else:
+            my_lost_items = match_service.all_lost_items(current_user.id, include_all=False)
+            my_found_items = match_service.all_found_items(current_user.id, include_all=False)
     
     # Determine which matches to show (user's matches or recent)
     if current_user.is_authenticated:
