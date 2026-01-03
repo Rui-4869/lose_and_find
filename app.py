@@ -246,6 +246,59 @@ def create_lost_item():
     return redirect(url_for("index", lost_id=lost_item.id))
 
 
+@app.route("/lost/<int:lost_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_lost_item(lost_id: int):
+    if not match_service.owns_lost_item(lost_id, current_user.id):
+        abort(403)
+    item = db.session.get(LostItem, lost_id)
+    if item is None:
+        flash("失物信息不存在。", "warning")
+        return redirect(url_for("index"))
+
+    if request.method == "GET":
+        return render_template("lost_form.html", categories=ITEM_CATEGORIES, item=item)
+
+    category = request.form.get("category", "").strip()
+    description = request.form.get("description", "").strip()
+    location = request.form.get("location", "").strip()
+    occurred_at = _parse_datetime(request.form.get("occurred_at"))
+    reporter_name = request.form.get("reporter_name", "").strip() or None
+    contact_info = request.form.get("contact_info", "").strip() or None
+    image_file = request.files.get("image")
+
+    if not category or not description or not location:
+        flash("请填写完整的失物信息。", "danger")
+        return redirect(url_for("view_lost_item", lost_id=lost_id))
+
+    if image_file and image_file.filename:
+        if not _allowed_image(image_file.filename):
+            flash("仅支持上传 PNG/JPG/GIF/WebP 等图片格式。", "danger")
+            return redirect(url_for("edit_lost_item", lost_id=lost_id))
+        try:
+            image_path = _save_uploaded_image(image_file)
+            item.image_path = image_path
+        except Exception as exc:  # pragma: no cover - unexpected file I/O errors
+            app.logger.exception("保存失物图片失败", exc_info=exc)
+            flash("上传图片时出现问题，请稍后重试。", "danger")
+            return redirect(url_for("edit_lost_item", lost_id=lost_id))
+
+    # Update fields
+    item.category = category
+    item.description = description
+    item.location = location
+    item.occurred_at = occurred_at
+    item.reporter_name = reporter_name
+    item.contact_info = contact_info or item.contact_info
+
+    db.session.commit()
+
+    # Re-run matching for the edited item
+    agent.handle_new_lost(item)
+    flash("失物信息已更新。智能体推荐已刷新。", "success")
+    return redirect(url_for("view_lost_item", lost_id=lost_id))
+
+
 @app.route("/found/new", methods=["GET", "POST"])
 @login_required
 def create_found_item():
@@ -297,15 +350,69 @@ def create_found_item():
     return redirect(url_for("index", found_id=found_item.id))
 
 
+@app.route("/found/<int:found_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_found_item(found_id: int):
+    if not match_service.owns_found_item(found_id, current_user.id):
+        abort(403)
+    item = db.session.get(FoundItem, found_id)
+    if item is None:
+        flash("招领信息不存在。", "warning")
+        return redirect(url_for("index"))
+
+    if request.method == "GET":
+        return render_template("found_form.html", categories=ITEM_CATEGORIES, item=item)
+
+    category = request.form.get("category", "").strip()
+    description = request.form.get("description", "").strip()
+    location = request.form.get("location", "").strip()
+    occurred_at = _parse_datetime(request.form.get("occurred_at"))
+    reporter_name = request.form.get("reporter_name", "").strip() or None
+    contact_info = request.form.get("contact_info", "").strip() or None
+    image_file = request.files.get("image")
+
+    if not category or not description or not location:
+        flash("请填写完整的招领信息。", "danger")
+        return redirect(url_for("view_found_item", found_id=found_id))
+
+    if image_file and image_file.filename:
+        if not _allowed_image(image_file.filename):
+            flash("仅支持上传 PNG/JPG/GIF/WebP 等图片格式。", "danger")
+            return redirect(url_for("edit_found_item", found_id=found_id))
+        try:
+            image_path = _save_uploaded_image(image_file)
+            item.image_path = image_path
+        except Exception as exc:  # pragma: no cover - unexpected file I/O errors
+            app.logger.exception("保存招领图片失败", exc_info=exc)
+            flash("上传图片时出现问题，请稍后重试。", "danger")
+            return redirect(url_for("edit_found_item", found_id=found_id))
+
+    # Update fields
+    item.category = category
+    item.description = description
+    item.location = location
+    item.occurred_at = occurred_at
+    item.reporter_name = reporter_name
+    item.contact_info = contact_info or item.contact_info
+
+    db.session.commit()
+
+    # Re-run matching for the edited item
+    agent.handle_new_found(item)
+    flash("招领信息已更新。智能体推荐已刷新。", "success")
+    return redirect(url_for("view_found_item", found_id=found_id))
+
+
 @app.post("/lost/<int:lost_id>/delete")
 @login_required
 def delete_lost_item(lost_id: int):
-    if not current_user.is_admin:
-        abort(403)
     item = db.session.get(LostItem, lost_id)
     if item is None:
         flash("失物信息不存在。", "warning")
         return redirect(url_for("index"))
+    # allow owner or admin to delete
+    if not (current_user.is_admin or item.user_id == current_user.id):
+        abort(403)
     match_service.delete_lost_item(lost_id)
     flash("失物信息已删除。", "info")
     return redirect(url_for("index"))
@@ -314,12 +421,13 @@ def delete_lost_item(lost_id: int):
 @app.post("/found/<int:found_id>/delete")
 @login_required
 def delete_found_item(found_id: int):
-    if not current_user.is_admin:
-        abort(403)
     item = db.session.get(FoundItem, found_id)
     if item is None:
         flash("招领信息不存在。", "warning")
         return redirect(url_for("index"))
+    # allow owner or admin to delete
+    if not (current_user.is_admin or item.user_id == current_user.id):
+        abort(403)
     match_service.delete_found_item(found_id)
     flash("招领信息已删除。", "info")
     return redirect(url_for("index"))

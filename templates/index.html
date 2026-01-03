@@ -10,7 +10,7 @@
 					<h5 class="card-title">发布失物信息</h5>
 					<p class="card-text text-muted">记录遗失物品的类别、地点与描述，可随时启动智能体进行匹配。</p>
 				</div>
-				<a class="btn btn-primary align-self-start" href="{{ url_for('create_lost_item') }}">前往填写</a>
+				<a class="btn btn-primary rounded-pill align-self-start px-3" href="{{ url_for('create_lost_item') }}"><i class="bi bi-plus-lg me-1"></i> 前往填写</a>
 			</div>
 		</div>
 	</div>
@@ -21,7 +21,7 @@
 					<h5 class="card-title">发布招领信息</h5>
 					<p class="card-text text-muted">记录拾到物品的关键信息，主动触发智能匹配帮助失主。</p>
 				</div>
-				<a class="btn btn-success align-self-start" href="{{ url_for('create_found_item') }}">前往填写</a>
+				<a class="btn btn-success rounded-pill align-self-start px-3" href="{{ url_for('create_found_item') }}"><i class="bi bi-plus-lg me-1"></i> 前往填写</a>
 			</div>
 		</div>
 	</div>
@@ -115,9 +115,82 @@
 	</div>
 </div>
 {% else %}
-<div class="alert alert-info">
-	登录后即可提交失物与招领信息，并使用智能推荐。<a class="alert-link" href="{{ url_for('login') }}">前往登录</a> 或 <a class="alert-link" href="{{ url_for('register') }}">立即注册</a>。
-</div>
+<section class="hero text-center bg-white mb-4 section-gap">
+    <div class="container py-5">
+        <h1 class="display-5 fw-bold">校园失物招领智能推荐</h1>
+        <p class="lead text-muted">快速发布失物与招领，基于智能匹配帮助尽快找回丢失物品，社区协作更高效。</p>
+        <div class="d-flex justify-content-center gap-3 my-3">
+            <a class="btn btn-primary btn-lg rounded-pill fw-semibold px-4" href="{{ url_for('login') }}">登录</a>
+            <a class="btn btn-outline-primary btn-lg rounded-pill fw-semibold px-4" href="{{ url_for('register') }}">注册</a>
+        </div>
+        <form class="d-flex justify-content-center mt-4" method="get" action="{{ url_for('index') }}">
+            <div class="input-group w-50 shadow-sm">
+                <input type="search" name="q" class="form-control" placeholder="搜索失物或地点，例如：钱包 / 图书馆" aria-label="搜索">
+                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="container mb-4 section-gap">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">最新失物预览</h4>
+        <small class="small-muted">登录查看完整详情与联系方式</small>
+    </div>
+    <div class="row g-3 card-preview">
+        {% if all_lost_items %}
+            {% for item in all_lost_items[:3] %}
+                <div class="col-sm-6 col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if item.image_path %}
+                        <img src="{{ url_for('static', filename=item.image_path) }}" class="card-img-top" alt="{{ item.category }}">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title mb-1">{{ item.category }}</h6>
+                            <p class="card-text text-muted small mb-3">{{ item.description[:60] }}{% if item.description|length > 60 %}...{% endif %}</p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <small class="text-muted">📍 {{ item.location }}</small>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('login') }}">登录查看</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center text-muted py-4">当前没有失物记录</div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="container mb-4 section-gap">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">最新招领预览</h4>
+        <small class="small-muted">登录查看完整详情与联系方式</small>
+    </div>
+    <div class="row g-3 card-preview">
+        {% if all_found_items %}
+            {% for item in all_found_items[:3] %}
+                <div class="col-sm-6 col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if item.image_path %}
+                        <img src="{{ url_for('static', filename=item.image_path) }}" class="card-img-top" alt="{{ item.category }}">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title mb-1">{{ item.category }}</h6>
+                            <p class="card-text text-muted small mb-3">{{ item.description[:60] }}{% if item.description|length > 60 %}...{% endif %}</p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <small class="text-muted">📍 {{ item.location }}</small>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('login') }}">登录查看</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center text-muted py-4">当前没有招领记录</div>
+        {% endif %}
+    </div>
+</section>
 {% endif %}
 
 {% endblock %}
@@ -236,7 +309,7 @@
 										<div class="fw-semibold mb-1">{{ match.lost_item.category }}</div>
 										<div class="text-muted small">{{ match.lost_item.description[:30] }}{% if match.lost_item.description|length > 30 %}...{% endif %}</div>
 										<div class="mt-2">
-											<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('view_lost_item', lost_id=match.lost_item.id) }}">查看失物</a>
+											<a class="btn btn-sm btn-outline-secondary rounded-pill" href="{{ url_for('view_lost_item', lost_id=match.lost_item.id) }}">查看失物</a>
 										</div>
 									</div>
 								</div>
@@ -250,7 +323,7 @@
 										<div class="fw-semibold mb-1">{{ match.found_item.category }}</div>
 										<div class="text-muted small">{{ match.found_item.description[:30] }}{% if match.found_item.description|length > 30 %}...{% endif %}</div>
 										<div class="mt-2">
-											<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('view_found_item', found_id=match.found_item.id) }}">查看招领</a>
+											<a class="btn btn-sm btn-outline-secondary rounded-pill" href="{{ url_for('view_found_item', found_id=match.found_item.id) }}">查看招领</a>
 										</div>
 									</div>
 								</div>

@@ -12,7 +12,7 @@
 						招领详情
 					{% endif %}
 				</h4>
-				<a href="{{ url_for('index') }}" class="btn btn-sm btn-secondary">返回列表</a>
+				<a href="{{ url_for('index') }}" class="btn btn-sm btn-secondary rounded-pill">返回列表</a>
 			</div>
 			<div class="card-body">
 				<div class="row mb-4">
@@ -73,24 +73,26 @@
 						<div class="col-12">
 							<div class="d-flex gap-2">
 								{% if item_type == "lost" %}
-									<form method="post" action="{{ url_for('trigger_lost_match', lost_id=item.id) }}" style="display: inline;">
-										<button class="btn btn-success" type="submit">
+									<a class="btn btn-outline-secondary rounded-pill" href="{{ url_for('edit_lost_item', lost_id=item.id) }}">编辑</a>
+						<form method="post" action="{{ url_for('trigger_lost_match', lost_id=item.id) }}" style="display: inline;">
+								<button class="btn btn-success rounded-pill" type="submit">
 											<i class="bi bi-arrow-repeat"></i> 启动智能体匹配
 										</button>
 									</form>
 									<form method="post" action="{{ url_for('delete_lost_item', lost_id=item.id) }}" onsubmit="return confirm('确认删除此失物记录？');" style="display: inline;">
-										<button class="btn btn-danger" type="submit">
+								<button class="btn btn-danger rounded-pill" type="submit">
 											<i class="bi bi-trash"></i> 删除记录
 										</button>
 									</form>
 								{% else %}
-									<form method="post" action="{{ url_for('trigger_found_match', found_id=item.id) }}" style="display: inline;">
-										<button class="btn btn-success" type="submit">
+									<a class="btn btn-outline-secondary rounded-pill" href="{{ url_for('edit_found_item', found_id=item.id) }}">编辑</a>
+						<form method="post" action="{{ url_for('trigger_found_match', found_id=item.id) }}" style="display: inline;">
+								<button class="btn btn-success rounded-pill" type="submit">
 											<i class="bi bi-arrow-repeat"></i> 启动智能体匹配
 										</button>
 									</form>
 									<form method="post" action="{{ url_for('delete_found_item', found_id=item.id) }}" onsubmit="return confirm('确认删除此招领记录？');" style="display: inline;">
-										<button class="btn btn-danger" type="submit">
+								<button class="btn btn-danger rounded-pill" type="submit">
 											<i class="bi bi-trash"></i> 删除记录
 										</button>
 									</form>
@@ -134,12 +136,12 @@
 												<strong>{{ match.found_item.category }}</strong> · {{ match.found_item.description[:40] }}<br>
 												<small class="text-muted">地点：{{ match.found_item.location }}</small><br>
 												<small class="text-muted">联系方式：{{ match.found_item.contact_info or "未提供" }}</small><br>
-												<a class="btn btn-sm btn-outline-secondary mt-2" href="{{ url_for('view_found_item', found_id=match.found_item.id) }}">查看招领详情</a>
+												<a class="btn btn-sm btn-outline-secondary rounded-pill mt-2" href="{{ url_for('view_found_item', found_id=match.found_item.id) }}">查看招领详情</a>
 											{% else %}
 												<strong>{{ match.lost_item.category }}</strong> · {{ match.lost_item.description[:40] }}<br>
 												<small class="text-muted">地点：{{ match.lost_item.location }}</small><br>
 												<small class="text-muted">联系方式：{{ match.lost_item.contact_info or "未提供" }}</small><br>
-												<a class="btn btn-sm btn-outline-secondary mt-2" href="{{ url_for('view_lost_item', lost_id=match.lost_item.id) }}">查看失物详情</a>
+												<a class="btn btn-sm btn-outline-secondary rounded-pill mt-2" href="{{ url_for('view_lost_item', lost_id=match.lost_item.id) }}">查看失物详情</a>
 											{% endif %}
 										</td>
 										<td>{{ match.score }}</td>
@@ -149,7 +151,7 @@
 												<span class="badge bg-secondary">已完成</span>
 											{% else %}
 												<form method="post" action="{{ url_for('complete_match', match_id=match.id) }}" onsubmit="return confirm('确认该匹配已完成？');" style="display: inline;">
-													<button class="btn btn-sm btn-outline-primary" type="submit">确认完成</button>
+													<button class="btn btn-sm btn-outline-primary rounded-pill" type="submit">确认完成</button>
 												</form>
 											{% endif %}
 										</td>

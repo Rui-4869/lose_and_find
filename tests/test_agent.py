@@ -356,3 +356,99 @@ def test_match_completion_requires_owner_permission():
     with main_app_module.app.app_context():
         match = db.session.get(MatchResult, match_id)
         assert match.is_completed is True
+
+
+def test_edit_lost_item_owner_can_edit():
+    client = create_client_with_fresh_db()
+
+    # register and create a lost item
+    client.post(
+        "/auth/register",
+        data={
+            "username": "editor",
+            "password": "password123",
+            "confirm": "password123",
+        },
+        follow_redirects=True,
+    )
+
+    client.post(
+        "/lost",
+        data={
+            "category": "证件",
+            "description": "初始描述",
+            "location": "图书馆",
+            "occurred_at": "2024-01-01T10:00",
+        },
+        follow_redirects=True,
+    )
+
+    with main_app_module.app.app_context():
+        item = db.session.scalar(db.select(LostItem))
+        assert item is not None
+        lost_id = item.id
+
+    # edit the item
+    resp = client.post(
+        f"/lost/{lost_id}/edit",
+        data={
+            "category": "证件",
+            "description": "已编辑描述",
+            "location": "图书馆二楼",
+            "occurred_at": "2024-01-02T09:00",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+    with main_app_module.app.app_context():
+        updated = db.session.get(LostItem, lost_id)
+        assert updated.description == "已编辑描述"
+        assert updated.location == "图书馆二楼"
+
+
+def test_edit_lost_item_forbidden_for_non_owner():
+    client = create_client_with_fresh_db()
+
+    # user A creates lost item
+    client.post(
+        "/auth/register",
+        data={
+            "username": "ownerA",
+            "password": "password123",
+            "confirm": "password123",
+        },
+        follow_redirects=True,
+    )
+    client.post(
+        "/lost",
+        data={
+            "category": "证件",
+            "description": "A的描述",
+            "location": "教学楼",
+            "occurred_at": "2024-01-01T10:00",
+        },
+        follow_redirects=True,
+    )
+
+    with main_app_module.app.app_context():
+        item = db.session.scalar(db.select(LostItem))
+        assert item is not None
+        lost_id = item.id
+
+    # logout and register another user
+    client.post("/auth/logout", follow_redirects=True)
+    client.post(
+        "/auth/register",
+        data={
+            "username": "userB",
+            "password": "password123",
+            "confirm": "password123",
+        },
+        follow_redirects=True,
+    )
+
+    # attempt to GET edit page should be 403
+    resp = client.get(f"/lost/{lost_id}/edit")
+    assert resp.status_code == 403
+

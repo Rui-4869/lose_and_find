@@ -5,50 +5,56 @@
     <div class="col-lg-8 col-xl-7">
         <div class="card shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">发布失物信息</h5>
-                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('index') }}">返回首页</a>
+                <h5 class="mb-0">{% if item %}编辑失物信息{% else %}发布失物信息{% endif %}</h5>
+                <a class="btn btn-sm btn-outline-secondary rounded-pill" href="{{ url_for('index') }}">返回首页</a>
             </div>
             <div class="card-body">
-                <form method="post" action="{{ url_for('create_lost_item') }}" enctype="multipart/form-data">
+                <form method="post" action="{{ url_for('edit_lost_item', lost_id=item.id) if item else url_for('create_lost_item') }}" enctype="multipart/form-data">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">物品类别</label>
                             <select class="form-select" name="category" required>
                                 <option value="">请选择类别</option>
                                 {% for category in categories %}
-                                    <option value="{{ category }}">{{ category }}</option>
+                                    <option value="{{ category }}" {% if item and item.category == category %}selected{% endif %}>{{ category }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">丢失时间</label>
-                            <input class="form-control" type="datetime-local" name="occurred_at">
+                            <input class="form-control" type="datetime-local" name="occurred_at" value="{% if item %}{{ item.occurred_at.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">丢失地点</label>
-                            <input class="form-control" name="location" placeholder="例如：图书馆三楼" required>
+                            <input class="form-control" name="location" placeholder="例如：图书馆三楼" required value="{% if item %}{{ item.location }}{% endif %}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">联系人（选填）</label>
-                            <input class="form-control" name="reporter_name">
+                            <input class="form-control" name="reporter_name" value="{% if item and item.reporter_name %}{{ item.reporter_name }}{% endif %}">
                         </div>
                         <div class="col-12">
                             <label class="form-label">详细描述</label>
-                            <textarea class="form-control" name="description" rows="4" placeholder="描述外观、颜色、特征" required></textarea>
+                            <textarea class="form-control" name="description" rows="4" placeholder="描述外观、颜色、特征" required>{% if item %}{{ item.description }}{% endif %}</textarea>
                         </div>
                         <div class="col-12">
                             <label class="form-label">联系方式（选填）</label>
-                            <input class="form-control" name="contact_info" placeholder="电话/邮箱/微信">
+                            <input class="form-control" name="contact_info" placeholder="电话/邮箱/微信" value="{% if item and item.contact_info %}{{ item.contact_info }}{% endif %}">
                         </div>
                         <div class="col-12">
                             <label class="form-label">物品照片（选填）</label>
+                            {% if item and item.image_path %}
+                                <div class="mb-2">
+                                    <img src="{{ url_for('static', filename=item.image_path) }}" alt="当前图片" class="img-thumbnail" style="max-height:140px;">
+                                    <div class="form-text">上传新图片将替换当前图片。</div>
+                                </div>
+                            {% endif %}
                             <input class="form-control" type="file" name="image" accept="image/*">
                             <div class="form-text">支持 PNG / JPG / GIF / WebP，大小不超过 5MB。</div>
                         </div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">取消</a>
-                        <button class="btn btn-primary" type="submit">提交失物信息</button>
+                        <a class="btn btn-outline-secondary rounded-pill" href="{{ url_for('index') }}">取消</a>
+                        <button class="btn btn-primary rounded-pill px-4" type="submit">{% if item %}保存更改{% else %}提交失物信息{% endif %}</button>
                     </div>
                 </form>
             </div>
